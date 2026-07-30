@@ -32,7 +32,8 @@ if [ ! -d "$WEB_ROOT/.git" ]; then
     git clone https://github.com/ibobatsuga/fluxy_main.git $WEB_ROOT
 else
     cd $WEB_ROOT
-    git pull origin main
+    git fetch origin main
+    git reset --hard origin/main
 fi
 
 cd $WEB_ROOT/fluxy-backend
@@ -43,25 +44,25 @@ if [ ! -f ".env" ]; then
 fi
 
 # Set Production Config
-sed -i 's/APP_ENV=local/APP_ENV=production/g' .env
-sed -i 's/APP_DEBUG=true/APP_DEBUG=false/g' .env
-
-# Generate Fresh Application Key
-php artisan key:generate --force
+sed -i 's/APP_ENV=local/APP_ENV=production/g' .env || true
+sed -i 's/APP_DEBUG=true/APP_DEBUG=false/g' .env || true
 
 # Create SQLite Database File
 mkdir -p database
 touch database/database.sqlite
 
-# 8. Install PHP Dependencies & Run Migrations
+# 8. Install Composer PHP Dependencies FIRST
 composer install --no-dev --optimize-autoloader --no-interaction
+
+# 9. Now Run Laravel Commands
+php artisan key:generate --force
 php artisan migrate --force
 
-# 9. Set File Permissions for Webserver
+# 10. Set File Permissions for Webserver
 sudo chown -R www-data:www-data /var/www/fluxy/fluxy-backend/storage /var/www/fluxy/fluxy-backend/bootstrap/cache /var/www/fluxy/fluxy-backend/database
 sudo chmod -R 775 /var/www/fluxy/fluxy-backend/storage /var/www/fluxy/fluxy-backend/bootstrap/cache /var/www/fluxy/fluxy-backend/database
 
-# 10. Configure Nginx Webserver
+# 11. Configure Nginx Webserver
 cat << 'EOF' | sudo tee /etc/nginx/sites-available/fluxy
 server {
     listen 80 default_server;
