@@ -8,8 +8,8 @@ RUN npm ci
 COPY fluxy-frontend-main/ ./
 RUN npm run build
 
-# Stage 2: PHP Runtime & Backend
-FROM php:8.2-cli-alpine
+# Stage 2: PHP 8.4 Runtime & Backend
+FROM php:8.4-cli-alpine
 WORKDIR /app
 
 # Install system dependencies & PHP extensions
