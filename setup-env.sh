@@ -7,10 +7,16 @@ ENV_FILE="/var/www/fluxy/fluxy-backend/.env"
 
 echo "Updating Production .env configuration & fixing storage permissions..."
 
+# Fix Directory & Database Permissions FIRST
+sudo mkdir -p /var/www/fluxy/fluxy-backend/database /var/www/fluxy/fluxy-backend/storage/logs /var/www/fluxy/fluxy-backend/storage/framework/views /var/www/fluxy/fluxy-backend/storage/framework/cache /var/www/fluxy/fluxy-backend/storage/framework/sessions
+sudo touch /var/www/fluxy/fluxy-backend/database/database.sqlite
+sudo chown -R www-data:www-data /var/www/fluxy /var/www/fluxy/fluxy-backend/storage /var/www/fluxy/fluxy-backend/bootstrap/cache /var/www/fluxy/fluxy-backend/database
+sudo chmod -R 777 /var/www/fluxy/fluxy-backend/storage /var/www/fluxy/fluxy-backend/bootstrap/cache /var/www/fluxy/fluxy-backend/database
+
 META_TOKEN=$(echo "RUFBbTc3TVBjZWFCU05aQUFwRkc4WkN5UkhGMjY4SlJ4OXY0RW1wSk5ycVpBSGF1ejNWT3BqWkNDam44WkJybFdwTU9KVFpDdW1VUVpCQ3Z1SHJxWUJyM3M0eUJjVG05UFhaQlVScUFiMG5NTjhRWVhrQjZZVDN3TVQ3d2tuYWZidVpaQ2pCYndwQm9SaUVxN1c5cnVGZW04ckJ6MGtaQkUwV3FHSjBaQUowVFpCYWFMaHNIeWFPSnFZTw1HbjdaQWFyOVBOV1loZ1pEWkQ=" | base64 -d | tr -d '\r\n')
 GEMINI_KEY=$(echo "QVEuQWI4Uk42SUUyTmthbC1WUUxDREF3Zi1sNzcyaFFFS296bWlHa0VQN0VWMkFHVWt0Zw==" | base64 -d | tr -d '\r\n')
 
-cat << EOF > $ENV_FILE
+sudo bash -c "cat << 'EOF' > $ENV_FILE
 APP_NAME=Fluxy
 APP_ENV=production
 APP_KEY=base64:4T4M7k8w9x0y1z2a3b4c5d6e7f8g9h0i1j2k3l4m5n6=
@@ -31,13 +37,10 @@ META_WEBHOOK_VERIFY_TOKEN=fluxy_wh_7k2xQm9vR4pL
 GEMINI_API_KEY=${GEMINI_KEY}
 GEMINI_MODEL=gemini-flash-latest
 PIXEL_IMAGE_PROVIDER=gemini
-EOF
+EOF"
 
-# Fix Directory & Database Permissions for Nginx (www-data)
-sudo mkdir -p /var/www/fluxy/fluxy-backend/database /var/www/fluxy/fluxy-backend/storage/logs
-sudo touch /var/www/fluxy/fluxy-backend/database/database.sqlite
-sudo chown -R www-data:www-data /var/www/fluxy/fluxy-backend/storage /var/www/fluxy/fluxy-backend/bootstrap/cache /var/www/fluxy/fluxy-backend/database
-sudo chmod -R 777 /var/www/fluxy/fluxy-backend/storage /var/www/fluxy/fluxy-backend/bootstrap/cache /var/www/fluxy/fluxy-backend/database
+sudo chown www-data:www-data $ENV_FILE
+sudo chmod 664 $ENV_FILE
 
 cd /var/www/fluxy/fluxy-backend
 sudo -u www-data php artisan config:clear || true
