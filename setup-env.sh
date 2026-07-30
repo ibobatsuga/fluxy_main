@@ -58,7 +58,8 @@ cd /var/www/fluxy/fluxy-backend
 sudo -u www-data php artisan config:clear || true
 sudo -u www-data php artisan cache:clear || true
 sudo -u www-data php artisan migrate --force || true
-sudo -u www-data php artisan tinker --execute="App\Models\User::where('email', 'ibobatsuga@gmail.com')->update(['is_admin' => true]); App\Models\Tenant::whereHas('users', fn(\$q) => \$q->where('email', 'ibobatsuga@gmail.com'))->update(['status' => 'active', 'approved_at' => now()]);" || true
+sudo -u www-data php artisan db:seed --force || true
+sudo -u www-data php artisan tinker --execute="App\Models\User::where('email', 'ibobatsuga@gmail.com')->update(['is_admin' => true]); App\Models\Tenant::query()->update(['status' => 'active', 'approved_at' => now()]);" || true
 
 # Ensure Nginx & SSL Certbot for app.fluxy.id
 sudo apt-get update -y
