@@ -58,7 +58,6 @@ cd /var/www/fluxy/fluxy-backend
 sudo -u www-data php artisan config:clear || true
 sudo -u www-data php artisan cache:clear || true
 sudo -u www-data php artisan migrate --force || true
-sudo -u www-data php artisan tinker --execute="App\Models\Tenant::query()->update(['status' => 'active']);" || true
 
 # Ensure Nginx & SSL Certbot for app.fluxy.id
 sudo apt-get update -y

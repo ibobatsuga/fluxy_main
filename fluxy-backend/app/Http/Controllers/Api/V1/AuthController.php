@@ -35,7 +35,7 @@ class AuthController extends ApiController
                 'business_name' => $validated['business_name'],
                 'industry_category' => $validated['industry_category'],
                 'timezone' => $validated['timezone'] ?? 'Asia/Jakarta',
-                'status' => 'active',
+                'status' => 'pending',
             ]);
 
             $user = User::create([
@@ -144,7 +144,7 @@ class AuthController extends ApiController
                     'business_name' => $google->getName() ?: 'Bisnis Baru',
                     'industry_category' => 'Lainnya',
                     'timezone' => 'Asia/Jakarta',
-                    'status' => 'active',
+                    'status' => 'pending',
                 ]);
 
                 $user = User::create([
