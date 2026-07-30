@@ -1,0 +1,1 @@
+import"./rolldown-runtime-QTnfLwEv.js";import{C as e,H as t,h as n}from"./card-DsMgu_ub.js";t();var r=e();function i({className:e,...t}){return(0,r.jsx)(`div`,{className:n(`animate-pulse rounded-md bg-primary/10`,e),...t})}export{i as t};
