@@ -60,6 +60,7 @@ sudo -u www-data php artisan config:clear || true
 sudo -u www-data php artisan cache:clear || true
 sudo -u www-data php artisan migrate --force || true
 sudo -u www-data php artisan db:seed --force || true
+sudo -u www-data php artisan storage:link || true
 sudo -u www-data php artisan tinker --execute="App\Models\User::where('email', 'ibobatsuga@gmail.com')->update(['is_admin' => true]); App\Models\Tenant::query()->update(['status' => 'active', 'approved_at' => now()]);" || true
 
 # Ensure Nginx & SSL Certbot for app.fluxy.id
@@ -102,6 +103,8 @@ sudo nginx -t
 sudo systemctl restart nginx
 
 sudo certbot --nginx -d app.fluxy.id -m ibobatsuga@gmail.com --agree-tos --non-interactive || true
+sudo chown -R www-data:www-data /var/www/fluxy
+sudo chmod -R 775 /var/www/fluxy/fluxy-backend/storage /var/www/fluxy/fluxy-backend/bootstrap/cache /var/www/fluxy/fluxy-backend/database
 sudo systemctl reload nginx
 
 echo "=========================================================="
