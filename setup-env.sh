@@ -98,7 +98,7 @@ sudo ln -sf /etc/nginx/sites-available/fluxy /etc/nginx/sites-enabled/fluxy
 sudo nginx -t
 sudo systemctl restart nginx
 
-sudo certbot --nginx -d app.fluxy.id -m admin@fluxy.id --agree-tos --non-interactive || true
+sudo certbot --nginx -d app.fluxy.id -m ibobatsuga@gmail.com --agree-tos --non-interactive || true
 sudo systemctl reload nginx
 
 echo "=========================================================="
