@@ -54,7 +54,110 @@ Fluxy is a multi-tenant SaaS platform that provides AI employees for online busi
 
 ---
 
-## 3. Production Environment & Credentials Setup
+## 3. Comprehensive End-to-End System Workflows
+
+### 3.1 Overall Request & Routing Architecture Workflow
+```
+[User Browser] 
+       │
+       ├─► (HTTPS / Port 443) ──► [Nginx Web Server]
+       │                               │
+       │                               ├─► Static SPA Pages (/login, /dashboard, /pixel, etc.)
+       │                               │   └─► Serves /var/www/fluxy/fluxy-backend/public/index.html
+       │                               │       (via routes/web.php SPA fallback)
+       │                               │
+       │                               └─► API Calls (/api/v1/...)
+       │                                   └─► FastCGI Pass to php8.4-fpm.sock
+       │                                       └─► Laravel Router (routes/api.php)
+       │                                           └─► Middlewares -> Controllers -> Services/DB
+```
+
+---
+
+### 3.2 Module Workflows (Frontend & Backend Details)
+
+#### A. Authentication & Authorization Module (Auth)
+- **Frontend Files**: `src/pages/auth/login.tsx`, `register.tsx`, `oauth-callback.tsx`, `src/stores/auth.ts`
+- **Backend Files**: `app/Http/Controllers/Api/V1/AuthController.php`, `config/services.php`
+- **Detailed Workflow**:
+  1. **Email Register / Login**:
+     - User submits credentials on `/login` or `/register`.
+     - Frontend sends `POST /api/v1/auth/login` or `POST /api/v1/auth/register`.
+     - Backend verifies credentials, creates Sanctum bearer token, and returns user & tenant profile.
+  2. **Google OAuth 2.0 Flow**:
+     - User clicks "Masuk dengan Google".
+     - Frontend redirects browser to `/api/v1/auth/google/redirect`.
+     - Laravel Socialite generates state & redirects to Google OAuth consent URL (`https://accounts.google.com/...`).
+     - Google redirects back to `https://app.fluxy.id/api/v1/auth/google/callback?code=...`.
+     - `AuthController::googleCallback()` receives code, fetches Google user info.
+     - **Owner Logic**: If Google email is `ibobatsuga@gmail.com`, Laravel sets `is_admin = true` and tenant status `active`. Other users receive `is_admin = false` and tenant status `pending`.
+     - Backend redirects browser to `https://app.fluxy.id/auth/callback?token=<sanctum_token>`.
+     - `oauth-callback.tsx` receives token, saves it into Zustand store (`setToken`), calls `fetchUser()`, and routes:
+       - If `is_admin = true` or tenant `status = active` ➔ Navigates to `/dashboard`.
+       - If tenant `status = pending` ➔ Navigates to `/pending-approval`.
+
+---
+
+#### B. Pixel Module (AI Product Image Designer)
+- **Frontend Files**: `src/pages/pixel/pixel-page.tsx`, `src/components/pixel/image-uploader.tsx`, `src/api/pixel.ts`
+- **Backend Files**: `app/Http/Controllers/Api/V1/PixelController.php`, `app/Services/Images/GeminiImageProvider.php`
+- **Detailed Workflow**:
+  1. User uploads a product image (or inputs a public Google Drive image link) and selects ratio (1:1, 4:5, 16:9, 9:16), lighting, background, and style.
+  2. Frontend sends `POST /api/v1/pixel/generate` with multipart image or link.
+  3. `PixelController` calls `UsageService` to check tenant quota limits.
+  4. Controller dispatches generation request to `GeminiImageProvider`.
+  5. `GeminiImageProvider` converts input image to base64, builds tailored prompt, and calls Google Gemini API (`GEMINI_API_KEY`, model `gemini-flash-latest`).
+  6. Generated image blob is saved to `/var/www/fluxy/fluxy-backend/storage/app/public/pixel/` and logged in `pixel_images` database table.
+  7. Public image URL (`https://app.fluxy.id/storage/pixel/...`) is returned to React frontend gallery.
+
+---
+
+#### C. Maya Module (Social Media Content Creator & Calendar Scheduler)
+- **Frontend Files**: `src/pages/maya/create-page.tsx`, `calendar-page.tsx`, `stories-page.tsx`, `connect-page.tsx`
+- **Backend Files**: `app/Http/Controllers/Api/V1/MayaController.php`, `app/Services/Meta/MetaService.php`
+- **Detailed Workflow**:
+  1. **Account Integration**: User connects Instagram Business or Facebook Page via Meta Graph API (`META_APP_ID`, `META_SYSTEM_USER_TOKEN`).
+  2. **Post Creation & AI Caption**: User inputs topic, selects platform, and attaches media.
+  3. **Scheduling**: `POST /api/v1/maya/posts` saves post record with `scheduled` status.
+  4. **Publishing**: `MetaService` triggers publish via Meta Graph API `/v24.0/{ig_user_id}/media` container creation & `/media_publish`.
+  5. **Bulk Stories Scheduler**: User uploads multiple Google Drive media links with slot per day rule; system auto-creates story publication queue.
+
+---
+
+#### D. Echo Module (Social Media Analytics & Growth Reporting)
+- **Frontend Files**: `src/pages/echo/echo-page.tsx`, `src/components/echo/trend-chart.tsx`
+- **Backend Files**: `app/Http/Controllers/Api/V1/EchoController.php`, `app/Services/Meta/MetaService.php`
+- **Detailed Workflow**:
+  1. `GET /api/v1/analytics?platform=all&from=YYYY-MM-DD&to=YYYY-MM-DD` fetches aggregate reach, engagement, followers growth %, and daily timeseries metrics.
+  2. `GET /api/v1/analytics/contents` ranks top posts by reach, likes, comments, shares, views.
+  3. `POST /api/v1/analytics/export` generates PDF / XLSX summary reports.
+
+---
+
+#### E. Kai Module (WhatsApp & Sales Chatbot Assistant)
+- **Frontend Files**: `src/pages/kai/chatbot-page.tsx`, `kai-devices-page.tsx`, `broadcast-page.tsx`, `logs-page.tsx`
+- **Backend Files**: `app/Http/Controllers/Api/V1/KaiController.php`, `app/Models/KaiDevice.php`, `KaiMessage.php`
+- **Detailed Workflow**:
+  1. **Device Pairing**: QR code device activation request (`POST /api/v1/kai/devices/request`).
+  2. **Inventory Catalog Ingestion**: Imports product CSV / Google Sheet for inventory, pricing, and stock querying.
+  3. **Auto-Response & Handover**: When customer inquiry matches payment/checkout keywords, chatbot notifies human admin (`admin_wa_number`) and logs handover record.
+  4. **Broadcast Campaigns**: `POST /api/v1/kai/broadcast` dispatches bulk broadcast messages to targeted contact groups.
+
+---
+
+#### F. Admin Module (Multi-Tenant Management & Approval)
+- **Frontend Files**: `src/pages/admin/tenants-page.tsx`, `config-page.tsx`, `logs-page.tsx`
+- **Backend Files**: `app/Http/Controllers/Api/V1/AdminController.php`, `app/Http/Middleware/EnsureAdmin.php`
+- **Detailed Workflow**:
+  1. Superadmin (`ibobatsuga@gmail.com` or `admin@fluxy.local`) opens `https://app.fluxy.id/admin/tenants`.
+  2. `GET /api/v1/users` lists all registered tenant businesses with usage stats and pending/active statuses.
+  3. **Approve Action**: `POST /api/v1/users/{user}/approve` updates tenant status to `active` and sets `approved_at = now()`. The tenant user can now access the full dashboard.
+  4. **Reject / Suspend Action**: `POST /api/v1/users/{user}/reject` or `suspend` disables tenant access.
+  5. **Limit Configuration**: `PUT /api/v1/config/limits` updates resource limits per module.
+
+---
+
+## 4. Production Environment & Credentials Setup
 
 The production server uses `/var/www/fluxy/fluxy-backend/.env` with the following configuration:
 
@@ -88,26 +191,6 @@ GOOGLE_CLIENT_SECRET=GOCSPX-*** (Managed via setup-env.sh)
 GOOGLE_REDIRECT_URI=https://app.fluxy.id/api/v1/auth/google/callback
 FRONTEND_URL=https://app.fluxy.id
 ```
-
----
-
-## 4. Key Authentication & Tenant Approval Logic
-
-1. **Owner / Superadmin Auto-Elevation**:
-   - In `app/Http/Controllers/Api/V1/AuthController.php`:
-     When a user logs in or registers via Google OAuth with email `ibobatsuga@gmail.com`, Laravel automatically sets:
-     - `is_admin = true`
-     - Tenant status = `active`
-   - This ensures `ibobatsuga@gmail.com` immediately bypasses the `/pending-approval` guard and lands on the Dashboard with full Superadmin privileges.
-
-2. **Standard Users & Tenant Approval Workflow**:
-   - Other users registering via Email or Google OAuth have `is_admin = false` and tenant status `pending`.
-   - Pending users are intercepted by `EnsureApprovedTenant` middleware and redirected to `/pending-approval`.
-   - The Owner (`ibobatsuga@gmail.com`) can approve or reject pending tenants via the Web Admin UI at **`https://app.fluxy.id/admin/tenants`** (API endpoint: `POST /api/v1/users/{user}/approve`).
-
-3. **Default Admin Seed Credentials**:
-   - `email`: `admin@fluxy.local`
-   - `password`: `ChangeMe123!`
 
 ---
 
