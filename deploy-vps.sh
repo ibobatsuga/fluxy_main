@@ -65,9 +65,9 @@ sudo chmod -R 775 /var/www/fluxy/fluxy-backend/storage /var/www/fluxy/fluxy-back
 # 11. Configure Nginx Webserver
 cat << 'EOF' | sudo tee /etc/nginx/sites-available/fluxy
 server {
-    listen 80 default_server;
-    listen [::]:80 default_server;
-    server_name _;
+    listen 80;
+    listen [::]:80;
+    server_name app.fluxy.id fluxy.id;
 
     root /var/www/fluxy/fluxy-backend/public;
     index index.php index.html;
@@ -95,6 +95,10 @@ sudo rm -f /etc/nginx/sites-enabled/default
 sudo ln -sf /etc/nginx/sites-available/fluxy /etc/nginx/sites-enabled/fluxy
 sudo nginx -t
 sudo systemctl restart nginx
+
+# 12. Setup Certbot for Free SSL (HTTPS)
+sudo apt-get install -y certbot python3-certbot-nginx
+sudo certbot --nginx -d app.fluxy.id --non-interactive --agree-tos --register-unsafely-without-email || true
 
 echo "=========================================================="
 echo "✅ FLUXI PRODUCTION DEPLOYMENT COMPLETE!"

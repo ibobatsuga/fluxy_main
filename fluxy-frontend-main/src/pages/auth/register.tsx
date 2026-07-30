@@ -200,7 +200,8 @@ export function RegisterPage() {
               variant="outline"
               className="w-full"
               onClick={() => {
-                window.location.href = `${import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api"}/v1/auth/google/redirect`;
+                const apiBase = import.meta.env.VITE_API_BASE_URL || "/api";
+                window.location.href = `${apiBase.replace(/\/$/, "")}/v1/auth/google/redirect`;
               }}
             >
               <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
