@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "node scripts/clean-build.mjs && tsc -b && vite build",
+    "postbuild": "node scripts/normalize-build.mjs",
     "lint": "oxlint",
     "preview": "vite preview"
   },

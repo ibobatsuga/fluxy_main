@@ -2,6 +2,7 @@
 .DS_Store
 Thumbs.db
 *.log
+backups/
 
 # Backend
 fluxy-backend/.env
