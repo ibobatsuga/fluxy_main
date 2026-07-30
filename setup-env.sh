@@ -59,6 +59,48 @@ sudo -u www-data php artisan config:clear || true
 sudo -u www-data php artisan cache:clear || true
 sudo -u www-data php artisan migrate --force || true
 
+# Ensure Nginx & SSL Certbot for app.fluxy.id
+sudo apt-get update -y
+sudo apt-get install -y certbot python3-certbot-nginx || true
+sudo ufw allow 'Nginx Full' || true
+sudo ufw allow 443/tcp || true
+
+cat << 'EOF' | sudo tee /etc/nginx/sites-available/fluxy
+server {
+    listen 80;
+    listen [::]:80;
+    server_name app.fluxy.id fluxy.id;
+
+    root /var/www/fluxy/fluxy-backend/public;
+    index index.php index.html;
+
+    client_max_body_size 64M;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/run/php/php8.4-fpm.sock;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        include fastcgi_params;
+    }
+
+    location ~ /\.ht {
+        deny all;
+    }
+}
+EOF
+
+sudo rm -f /etc/nginx/sites-enabled/default
+sudo ln -sf /etc/nginx/sites-available/fluxy /etc/nginx/sites-enabled/fluxy
+sudo nginx -t
+sudo systemctl restart nginx
+
+sudo certbot --nginx -d app.fluxy.id --non-interactive --agree-tos --register-unsafely-without-email || true
+sudo systemctl reload nginx
+
 echo "=========================================================="
 echo "✅ Code & Production .env updated 100% successfully!"
 echo "=========================================================="
