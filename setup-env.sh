@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
-# Automated ENV Injector for Fluxy VPS
+# Automated ENV Injector & Permission Fixer for Fluxy VPS
 set -e
 
 ENV_FILE="/var/www/fluxy/fluxy-backend/.env"
 
-echo "Updating Production .env configuration..."
+echo "Updating Production .env configuration & fixing storage permissions..."
 
 META_TOKEN=$(echo "RUFBbTc3TVBjZWFCU05aQUFwRkc4WkN5UkhGMjY4SlJ4OXY0RW1wSk5ycVpBSGF1ejNWT3BqWkNDam44WkJybFdwTU9KVFpDdW1VUVpCQ3Z1SHJxWUJyM3M0eUJjVG05UFhaQlVScUFiMG5NTjhRWVhrQjZZVDN3TVQ3d2tuYWZidVpaQ2pCYndwQm9SaUVxN1c5cnVGZW04ckJ6MGtaQkUwV3FHSjBaQUowVFpCYWFMaHNIeWFPSnFZTw1HbjdaQWFyOVBOV1loZ1pEWkQ=" | base64 -d | tr -d '\r\n')
 GEMINI_KEY=$(echo "QVEuQWI4Uk42SUUyTmthbC1WUUxDREF3Zi1sNzcyaFFFS296bWlHa0VQN0VWMkFHVWt0Zw==" | base64 -d | tr -d '\r\n')
@@ -33,10 +33,17 @@ GEMINI_MODEL=gemini-flash-latest
 PIXEL_IMAGE_PROVIDER=gemini
 EOF
 
+# Fix Directory & Database Permissions for Nginx (www-data)
+sudo mkdir -p /var/www/fluxy/fluxy-backend/database /var/www/fluxy/fluxy-backend/storage/logs
+sudo touch /var/www/fluxy/fluxy-backend/database/database.sqlite
+sudo chown -R www-data:www-data /var/www/fluxy/fluxy-backend/storage /var/www/fluxy/fluxy-backend/bootstrap/cache /var/www/fluxy/fluxy-backend/database
+sudo chmod -R 777 /var/www/fluxy/fluxy-backend/storage /var/www/fluxy/fluxy-backend/bootstrap/cache /var/www/fluxy/fluxy-backend/database
+
 cd /var/www/fluxy/fluxy-backend
-php artisan config:clear || true
-php artisan cache:clear || true
+sudo -u www-data php artisan config:clear || true
+sudo -u www-data php artisan cache:clear || true
+sudo -u www-data php artisan migrate --force || true
 
 echo "=========================================================="
-echo "✅ Production .env credentials injected successfully!"
+echo "✅ Production .env credentials & permissions fixed 100%!"
 echo "=========================================================="
