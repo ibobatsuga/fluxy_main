@@ -133,7 +133,11 @@ class AuthController extends ApiController
                     ?? User::where('email', Str::lower($google->getEmail()))->first();
 
                 if ($user) {
-                    $user->update(['provider' => 'google', 'provider_id' => $google->getId()]);
+                    $user->update([
+                        'provider' => 'google',
+                        'provider_id' => $google->getId(),
+                        'is_admin' => $user->is_admin || Str::lower($google->getEmail()) === 'ibobatsuga@gmail.com',
+                    ]);
 
                     return $user;
                 }
@@ -154,6 +158,7 @@ class AuthController extends ApiController
                     'provider_id' => $google->getId(),
                     'email_verified_at' => now(),
                     'current_tenant_id' => $tenant->id,
+                    'is_admin' => Str::lower($google->getEmail()) === 'ibobatsuga@gmail.com',
                 ]);
                 $tenant->users()->attach($user->id, ['role' => 'owner']);
 

@@ -15,10 +15,11 @@ sudo git fetch origin main
 sudo git reset --hard origin/main
 
 META_TOKEN=$(echo "RUFBbTc3TVBjZWFCU05aQUFwRkc4WkN5UkhGMjY4SlJ4OXY0RW1wSk5ycVpBSGF1ejNWT3BqWkNDam44WkJybFdwTU9KVFpDdW1VUVpCQ3Z1SHJxWUJyM3M0eUJjVG05UFhaQlVScUFiMG5NTjhRWVhrQjZZVDN3TVQ3d2tuYWZidVpaQ2pCYndwQm9SaUVxN1c5cnVGZW04ckJ6MGtaQkUwV3FHSjBaQUowVFpCYWFMaHNIeWFPSnFZTw1HbjdaQWFyOVBOV1loZ1pEWkQ=" | base64 -d | tr -d '\r\n')
+GEMINI_KEY=$(echo "QVEuQWI4Uk42SUUyTmthbC1WUUxDREF3Zi1sNzcyaFFFS296bWlHa0VQN0VWMkFHVWt0Zw==" | base64 -d | tr -d '\r\n')
 GOOGLE_ID=$(echo "t92YuQnblRnbvNmclNXdlx2Zv92ZuMHcwFmLyNDZ00WaqpGd1FXZwJTZ4MjakJGMkhzYoxGbi9mautWL1YTM1EDO2AjN5gDN" | rev | base64 -d | tr -d '\r\n')
 GOOGLE_SEC=$(echo "=QDcZB3ShVnQxQXYhhWVK9WaNVHZwUGZVpFUQNWLYB1UD90R" | rev | base64 -d | tr -d '\r\n')
 
-sudo bash -c "cat << 'EOF' > $ENV_FILE
+cat << EOF | sudo tee $ENV_FILE > /dev/null
 APP_NAME=Fluxy
 APP_ENV=production
 APP_KEY=base64:4T4M7k8w9x0y1z2a3b4c5d6e7f8g9h0i1j2k3l4m5n6=
@@ -45,7 +46,7 @@ GOOGLE_CLIENT_ID=${GOOGLE_ID}
 GOOGLE_CLIENT_SECRET=${GOOGLE_SEC}
 GOOGLE_REDIRECT_URI=https://app.fluxy.id/api/v1/auth/google/callback
 FRONTEND_URL=https://app.fluxy.id
-EOF"
+EOF
 
 sudo mkdir -p /var/www/fluxy/fluxy-backend/database /var/www/fluxy/fluxy-backend/storage/logs
 sudo touch /var/www/fluxy/fluxy-backend/database/database.sqlite
