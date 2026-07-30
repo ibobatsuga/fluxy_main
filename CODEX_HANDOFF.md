@@ -1,6 +1,6 @@
 # 🚀 FLUXY (app.fluxy.id) — Comprehensive Technical Handoff & Architecture Blueprint for Codex
 
-Document Revision: 4.0 (Master Encyclopedia Edition)  
+Document Revision: 5.0 (Ultimate Complete Edition)  
 Date: July 31, 2026  
 Project Name: **Fluxy — AI-Powered Workforce Platform for Businesses**  
 Production URL: `https://app.fluxy.id`  
@@ -63,7 +63,7 @@ Fluxy is a multi-tenant AI Employee SaaS platform designed to automate e-commerc
 │   ├── app/
 │   │   ├── Contracts/             # Interfaces (e.g. ImageProvider.php)
 │   │   ├── Http/
-│   │   │   ├── Controllers/Api/V1/ # API Controllers:
+│   │   │   ├── Controllers/Api/V1/# REST API Controllers:
 │   │   │   │   ├── AuthController.php    # Email & Google OAuth authentication, tenant creation, approval
 │   │   │   │   ├── AdminController.php   # Multi-tenant management, approvals, limit settings, activity logs
 │   │   │   │   ├── PixelController.php   # AI Product Image generation & gallery endpoints
@@ -76,8 +76,8 @@ Fluxy is a multi-tenant AI Employee SaaS platform designed to automate e-commerc
 │   │   │   └── Requests/          # Request validation classes
 │   │   ├── Models/                # Eloquent Models: User, Tenant, Plan, Subscription, KaiDevice, PixelImage, EchoAnalytics, etc.
 │   │   ├── Providers/             # AppServiceProvider (ImageProvider singleton binding)
-│   │   ├── Services/              # Core business logic: Images/GeminiImageProvider, Kai, Meta, UsageService
-│   │   └── Support/               # Helpers & Presenters (TenantPresenter)
+│   │   ├── Services/              # Core business logic: Images/GeminiImageProvider, Kai, Meta, UsageService, AuditService
+│   │   └── Support/               # Helpers & Presenters (TenantPresenter.php)
 │   ├── bootstrap/
 │   │   └── app.php                # Application route bindings, Exception handling, & $middleware->trustProxies(at: '*')
 │   ├── config/                    # Config files: app.php, services.php (Meta, Gemini, Google OAuth), database.php, filesystems.php
@@ -98,7 +98,7 @@ Fluxy is a multi-tenant AI Employee SaaS platform designed to automate e-commerc
 │
 └── fluxy-frontend-main/           # React 19 SPA Frontend Source Code
     ├── src/
-    │   ├── api/                   # API client functions (auth.ts, maya.ts, kai.ts, pixel.ts, echo.ts)
+    │   ├── api/                   # API client functions (auth.ts, maya.ts, kai.ts, pixel.ts, echo.ts, admin.ts)
     │   ├── components/            # Reusable UI components (shadcn/radix based: dialog, buttons, cards, sidebar, header)
     │   ├── lib/
     │   │   ├── axios.ts           # Axios instance with relative baseURL '/api'
@@ -528,95 +528,101 @@ All API routes are grouped under `/api/v1/`.
 
 ---
 
-## 7. Critical Code Architecture Snippets
+## 7. Complete Environment Variables (.env) Reference Table
 
-### 7.1 Backend `bootstrap/app.php` (Proxy & SSL Enforcement)
-```php
-<?php
+| Variable Name | Required | Default Value | Description / Production Purpose |
+| :--- | :--- | :--- | :--- |
+| `APP_NAME` | Yes | `Fluxy` | Platform application name |
+| `APP_ENV` | Yes | `production` | Environment mode (`production` or `local`) |
+| `APP_KEY` | Yes | `base64:...` | Encryption key generated via `php artisan key:generate` |
+| `APP_DEBUG` | Yes | `false` | Debug mode (MUST be `false` in production) |
+| `APP_URL` | Yes | `https://app.fluxy.id` | Production HTTPS application URL |
+| `DB_CONNECTION` | Yes | `sqlite` | Database driver |
+| `DB_DATABASE` | Yes | `/var/www/...` | Absolute path to SQLite database file |
+| `META_GRAPH_URL` | Yes | `https://graph.facebook.com` | Meta Graph API base endpoint |
+| `META_GRAPH_VERSION` | Yes | `v24.0` | Meta Graph API version |
+| `META_APP_ID` | Yes | `2739900363078048` | Meta Developer App ID |
+| `META_APP_SECRET` | Yes | `d31d680...` | Meta Developer App Secret |
+| `META_BUSINESS_ID` | Yes | `28254187...` | Meta Business Account ID |
+| `META_SYSTEM_USER_TOKEN` | Yes | `EAAm77MP...` | Permanent Meta System User Token |
+| `META_WEBHOOK_VERIFY_TOKEN` | Yes | `fluxy_wh_7k2xQm9vR4pL` | Verification token for Meta webhooks |
+| `GEMINI_API_KEY` | Yes | `AQ.Ab8RN6...` | Google Gemini AI API key |
+| `GEMINI_MODEL` | Yes | `gemini-flash-latest` | Model identifier for product image design |
+| `PIXEL_IMAGE_PROVIDER` | Yes | `gemini` | Resolved image generation provider singleton |
+| `GOOGLE_CLIENT_ID` | Yes | `4896068...` | Google OAuth Client ID |
+| `GOOGLE_CLIENT_SECRET` | Yes | `GOCSPX-...` | Google OAuth Client Secret |
+| `GOOGLE_REDIRECT_URI` | Yes | `https://app.fluxy.id/api/v1/auth/google/callback` | OAuth redirect URI registered in Google Console |
+| `FRONTEND_URL` | Yes | `https://app.fluxy.id` | Production frontend URL for CORS & redirects |
 
-use App\Http\Middleware\EnsureActiveSubscription;
-use App\Http\Middleware\EnsureAdmin;
-use App\Http\Middleware\EnsureApprovedTenant;
-use Illuminate\Foundation\Application;
-use Illuminate\Foundation\Configuration\Exceptions;
-use Illuminate\Foundation\Configuration\Middleware;
-use Illuminate\Http\Request;
+---
 
-return Application::configure(basePath: dirname(__DIR__))
-    ->withRouting(
-        web: __DIR__.'/../routes/web.php',
-        api: __DIR__.'/../routes/api.php',
-        commands: __DIR__.'/../routes/console.php',
-        health: '/up',
-    )
-    ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->trustProxies(at: '*');
-        $middleware->alias([
-            'admin' => EnsureAdmin::class,
-            'approved' => EnsureApprovedTenant::class,
-            'subscribed' => EnsureActiveSubscription::class,
-        ]);
-    })
-    ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->shouldRenderJsonWhen(
-            fn (Request $request) => $request->is('api/*'),
-        );
-    })->create();
-```
+## 8. Complete Frontend Page Routing & Guard Map
 
-### 7.2 Frontend `src/lib/axios.ts` (Relative API Client)
-```typescript
-import axios from "axios";
-import { useAuthStore } from "@/stores/auth";
+| Route Path | Component File | Guards Required | Description |
+| :--- | :--- | :--- | :--- |
+| `/login` | `src/pages/auth/login.tsx` | Public / Guest | Email/password login & Google OAuth trigger |
+| `/register` | `src/pages/auth/register.tsx` | Public / Guest | New business tenant registration |
+| `/auth/callback` | `src/pages/auth/oauth-callback.tsx` | Public | OAuth token reception & Zustand auth store initialization |
+| `/pending-approval`| `src/pages/auth/pending-approval.tsx`| Authenticated | Landing screen for tenants awaiting admin approval |
+| `/dashboard` | `src/pages/dashboard/dashboard-page.tsx`| Auth + Approved | Main overview dashboard for active tenants |
+| `/pixel` | `src/pages/pixel/pixel-page.tsx` | Auth + Approved | AI Product Photo Generation tool & gallery |
+| `/maya/create` | `src/pages/maya/create-page.tsx` | Auth + Approved | AI Social Media Post composer |
+| `/maya/calendar` | `src/pages/maya/calendar-page.tsx` | Auth + Approved | Social content calendar & scheduler |
+| `/maya/stories` | `src/pages/maya/stories-page.tsx` | Auth + Approved | Bulk Instagram Story scheduler from GDrive links |
+| `/maya/connect` | `src/pages/maya/connect-page.tsx` | Auth + Approved | Instagram Business & TikTok account connection |
+| `/echo` | `src/pages/echo/echo-page.tsx` | Auth + Approved | Social media analytics & growth charts |
+| `/kai/chatbot` | `src/pages/kai/chatbot-page.tsx` | Auth + Approved | WhatsApp AI Chatbot knowledge base & settings |
+| `/kai/devices` | `src/pages/kai/kai-devices-page.tsx` | Auth + Approved | WhatsApp Kai QR code device pairing |
+| `/kai/broadcast` | `src/pages/kai/broadcast-page.tsx` | Auth + Approved | Bulk broadcast campaign dispatch |
+| `/kai/logs` | `src/pages/kai/logs-page.tsx` | Auth + Approved | WhatsApp Chatbot response & handover logs |
+| `/admin/tenants` | `src/pages/admin/tenants-page.tsx` | Auth + Superadmin | Tenant approval, rejection & quota management |
+| `/admin/config` | `src/pages/admin/config-page.tsx` | Auth + Superadmin | Global platform limit settings |
+| `/admin/logs` | `src/pages/admin/logs-page.tsx` | Auth + Superadmin | System audit & activity logs |
 
-const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "/api",
-  headers: {
-    "Content-Type": "application/json",
-    Accept: "application/json",
-  },
-  withCredentials: false,
-});
+---
 
-api.interceptors.request.use((config) => {
-  const token = useAuthStore.getState().token;
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+## 9. Full Nginx Web Server Configuration File (`/etc/nginx/sites-available/fluxy`)
 
-export default api;
+```nginx
+server {
+    listen 80;
+    listen [::]:80;
+    server_name app.fluxy.id fluxy.id;
+
+    root /var/www/fluxy/fluxy-backend/public;
+    index index.php index.html;
+
+    client_max_body_size 64M;
+
+    # Gzip Compression
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
+
+    # Security Headers
+    add_header X-Frame-Options "SAMEORIGIN";
+    add_header X-XSS-Protection "1; mode=block";
+    add_header X-Content-Type-Options "nosniff";
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/run/php/php8.4-fpm.sock;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        include fastcgi_params;
+    }
+
+    location ~ /\.ht {
+        deny all;
+    }
+}
 ```
 
 ---
 
-## 8. Build, Deployment, & Automated Operations
-
-### Local Development / Frontend Build
-To compile the frontend SPA assets directly into Laravel's public directory:
-```bash
-npm --prefix fluxy-frontend-main run build
-```
-
-### Deploying & Updating VPS (`app.fluxy.id`)
-On the VPS (`103.126.117.182`), run the automated deployment script:
-```bash
-cd /var/www/fluxy && sudo bash setup-env.sh
-```
-
-What `setup-env.sh` automatically performs:
-1. Configures `safe.directory` and pulls latest code from `origin main`.
-2. Generates the production `.env` file with base64-decoded credentials.
-3. Sets up directory structure and initial database permissions (`www-data:www-data 775`).
-4. Runs `php artisan config:clear`, `cache:clear`, `migrate --force`, and `db:seed --force`.
-5. Ensures symbolic link `php artisan storage:link`.
-6. Installs Certbot and generates Let's Encrypt SSL for `app.fluxy.id`.
-7. Reconfigures Nginx webserver and reloads services.
-
----
-
-## 9. Comprehensive 20+ Item Diagnostic Matrix
+## 10. Comprehensive 20+ Item Diagnostic Matrix
 
 | Error / Symptom | Root Cause | Solution Command / Action |
 | :--- | :--- | :--- |
@@ -635,7 +641,7 @@ What `setup-env.sh` automatically performs:
 
 ---
 
-## 10. Immediate Next Tasks for Codex
+## 11. Immediate Next Tasks for Codex
 
 1. **Module Inspection & Verification**: Test and verify all API endpoints for Maya (stories, calendar), Kai (chatbot, WA handover), Pixel (Gemini image generation), and Echo (analytics).
 2. **Webhooks Verification**: Confirm Meta webhook callback handler at `POST /api/v1/meta/webhook` verifies token `fluxy_wh_7k2xQm9vR4pL` cleanly.
