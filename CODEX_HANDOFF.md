@@ -1,6 +1,6 @@
 # 🚀 FLUXY (app.fluxy.id) — Comprehensive Technical Handoff & Architecture Blueprint for Codex
 
-Document Revision: 5.0 (Ultimate Complete Edition)  
+Document Revision: 6.0 (Complete All-Inclusive Edition)  
 Date: July 31, 2026  
 Project Name: **Fluxy — AI-Powered Workforce Platform for Businesses**  
 Production URL: `https://app.fluxy.id`  
@@ -14,10 +14,10 @@ GitHub Repository: `https://github.com/ibobatsuga/fluxy_main.git` (Branch: `main
 Fluxy is a multi-tenant AI Employee SaaS platform designed to automate e-commerce and online business operations across marketing, design, customer service, and analytics.
 
 ### Platform Modules:
-1. **Pixel**: AI Product Image Designer (powered by Google Gemini API).
-2. **Maya**: Social Media Content Creator & Calendar Scheduler for Instagram & TikTok (powered by Meta Graph API).
+1. **Pixel**: AI Product Image Designer (powered by Google Gemini API & Cloudflare Workers AI fallback).
+2. **Maya**: Social Media Content Creator & Calendar Scheduler for Instagram & TikTok (powered by Meta Graph API v24.0).
 3. **Echo**: Social Media Performance Analytics & Growth Reporting.
-4. **Kai**: WhatsApp & Chatbot Sales & Customer Service AI Assistant with live human handover.
+4. **Kai**: WhatsApp & Chatbot Sales & Customer Service AI Assistant with QR pairing gateway & live human handover.
 5. **Admin**: Multi-tenant management, user verification/approval, resource quota limits, and global credential management.
 
 ### Technology Stack & Versions:
@@ -50,7 +50,7 @@ Fluxy is a multi-tenant AI Employee SaaS platform designed to automate e-commerc
 
 ---
 
-## 3. Exhaustive Directory & File Map
+## 3. Complete Directory & File Map
 
 ```text
 /Users/ibobatsuga/Documents/fluxy-main/ (Workspace Root)
@@ -62,6 +62,7 @@ Fluxy is a multi-tenant AI Employee SaaS platform designed to automate e-commerc
 │   ├── .env                       # Active production configuration file
 │   ├── app/
 │   │   ├── Contracts/             # Interfaces (e.g. ImageProvider.php)
+│   │   ├── Data/                  # Data Transfer Objects (GeneratedImage.php)
 │   │   ├── Http/
 │   │   │   ├── Controllers/Api/V1/# REST API Controllers:
 │   │   │   │   ├── AuthController.php    # Email & Google OAuth authentication, tenant creation, approval
@@ -74,16 +75,21 @@ Fluxy is a multi-tenant AI Employee SaaS platform designed to automate e-commerc
 │   │   │   │   └── MetaAdminController.php# Meta sync endpoints
 │   │   │   ├── Middleware/        # Custom middlewares: EnsureAdmin, EnsureApprovedTenant, EnsureActiveSubscription
 │   │   │   └── Requests/          # Request validation classes
-│   │   ├── Models/                # Eloquent Models: User, Tenant, Plan, Subscription, KaiDevice, PixelImage, EchoAnalytics, etc.
+│   │   ├── Models/                # 22 Eloquent Models (User, Tenant, Plan, Subscription, KaiDevice, KaiConversation, AuditLog, etc.)
 │   │   ├── Providers/             # AppServiceProvider (ImageProvider singleton binding)
-│   │   ├── Services/              # Core business logic: Images/GeminiImageProvider, Kai, Meta, UsageService, AuditService
+│   │   ├── Services/              # Core Business Logic Services:
+│   │   │   ├── Images/            # GeminiImageProvider.php, CloudflareImageProvider.php, FakeImageProvider.php
+│   │   │   ├── Kai/               # WhatsAppQrGatewayService.php (WhatsApp QR pairing gateway)
+│   │   │   ├── Meta/              # MetaService.php (Meta Graph API v24.0 integration)
+│   │   │   ├── AuditService.php   # Tenant activity audit logging
+│   │   │   └── UsageService.php   # Quota limit checking & metric recording
 │   │   └── Support/               # Helpers & Presenters (TenantPresenter.php)
 │   ├── bootstrap/
 │   │   └── app.php                # Application route bindings, Exception handling, & $middleware->trustProxies(at: '*')
 │   ├── config/                    # Config files: app.php, services.php (Meta, Gemini, Google OAuth), database.php, filesystems.php
 │   ├── database/
 │   │   ├── database.sqlite        # Active SQLite database file
-│   │   ├── migrations/            # Table migrations (users, tenants, plans, subscriptions, images, logs)
+│   │   ├── migrations/            # Table migrations (users, tenants, plans, subscriptions, images, logs, Kai tables)
 │   │   └── seeders/               # DatabaseSeeder.php (Seeds admin@fluxy.local / ChangeMe123! & default plan)
 │   ├── public/                    # Production Build Destination for SPA Frontend
 │   │   ├── index.html             # Main Single Page Application entry HTML
@@ -120,192 +126,35 @@ Fluxy is a multi-tenant AI Employee SaaS platform designed to automate e-commerc
 
 ---
 
-## 4. Complete Database Schemas, Indexes, & Seed Data
+## 4. Complete Database Schemas & 22 Eloquent Models Reference
 
-The SQLite database (`/var/www/fluxy/fluxy-backend/database/database.sqlite`) contains the following 11 tables:
+The SQLite database (`/var/www/fluxy/fluxy-backend/database/database.sqlite`) maps to **22 Eloquent Models**:
 
-### 4.1 `users` Table
-```sql
-CREATE TABLE users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name VARCHAR(255) NOT NULL,
-    email VARCHAR(255) NOT NULL UNIQUE,
-    password VARCHAR(255) NULLABLE,
-    provider VARCHAR(50) NOT NULL DEFAULT 'email', -- 'email', 'google'
-    provider_id VARCHAR(255) NULLABLE,
-    is_admin BOOLEAN NOT NULL DEFAULT 0,          -- Grants Superadmin access
-    current_tenant_id INTEGER NULLABLE,
-    email_verified_at TIMESTAMP NULLABLE,
-    created_at TIMESTAMP NULLABLE,
-    updated_at TIMESTAMP NULLABLE,
-    FOREIGN KEY (current_tenant_id) REFERENCES tenants(id) ON DELETE SET NULL
-);
-```
+### 4.1 Core Infrastructure Models
+1. **`User`**: System users (email, google OAuth provider, `is_admin`, `current_tenant_id`).
+2. **`Tenant`**: Tenant businesses (`slug`, `business_name`, `industry_category`, `status` [pending/active/suspended/rejected], `approved_at`).
+3. **`Plan`**: Subscription tiers (`code`, `name`, `limits` JSON).
+4. **`Subscription`**: Active tenant subscriptions (`starts_at`, `ends_at`, `status`).
+5. **`AuditLog`**: System activity audit trails (`tenant_id`, `user_id`, `action`, `description`, `metadata`).
+6. **`FluxyNotification`**: User notifications (`type`, `title`, `message`, `data`, `read_at`).
+7. **`PlatformCredential`**: System credential overrides.
+8. **`UsageCounter`**: Monthly usage metrics tracker.
+9. **`UsageEvent`**: Usage transaction log events.
 
-### 4.2 `tenants` Table
-```sql
-CREATE TABLE tenants (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name VARCHAR(255) NOT NULL,
-    slug VARCHAR(255) NOT NULL UNIQUE,
-    business_name VARCHAR(255) NOT NULL,
-    industry_category VARCHAR(255) NOT NULL,
-    timezone VARCHAR(50) NOT NULL DEFAULT 'Asia/Jakarta',
-    status VARCHAR(50) NOT NULL DEFAULT 'pending', -- 'pending', 'active', 'suspended', 'rejected'
-    approved_at TIMESTAMP NULLABLE,
-    created_at TIMESTAMP NULLABLE,
-    updated_at TIMESTAMP NULLABLE
-);
-```
-
-### 4.3 `tenant_user` Table (Pivot)
-```sql
-CREATE TABLE tenant_user (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    tenant_id INTEGER NOT NULL,
-    user_id INTEGER NOT NULL,
-    role VARCHAR(50) NOT NULL DEFAULT 'owner',
-    created_at TIMESTAMP NULLABLE,
-    updated_at TIMESTAMP NULLABLE,
-    FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-```
-
-### 4.4 `plans` Table
-```sql
-CREATE TABLE plans (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    code VARCHAR(50) NOT NULL UNIQUE,
-    name VARCHAR(255) NOT NULL,
-    limits JSON NOT NULL, -- Quotas for pixel, maya, kai, echo
-    is_active BOOLEAN NOT NULL DEFAULT 1,
-    created_at TIMESTAMP NULLABLE,
-    updated_at TIMESTAMP NULLABLE
-);
-```
-
-### 4.5 `subscriptions` Table
-```sql
-CREATE TABLE subscriptions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    tenant_id INTEGER NOT NULL,
-    plan_id INTEGER NOT NULL,
-    status VARCHAR(50) NOT NULL DEFAULT 'active',
-    starts_at TIMESTAMP NOT NULL,
-    ends_at TIMESTAMP NOT NULL,
-    created_at TIMESTAMP NULLABLE,
-    updated_at TIMESTAMP NULLABLE,
-    FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
-    FOREIGN KEY (plan_id) REFERENCES plans(id) ON DELETE CASCADE
-);
-```
-
-### 4.6 `pixel_images` Table
-```sql
-CREATE TABLE pixel_images (
-    id CHAR(36) PRIMARY KEY NOT NULL, -- UUID
-    tenant_id INTEGER NOT NULL,
-    user_id INTEGER NOT NULL,
-    url VARCHAR(500) NOT NULL,
-    prompt TEXT NULLABLE,
-    aspect_ratio VARCHAR(20) NOT NULL DEFAULT '1:1',
-    lighting VARCHAR(100) NULLABLE,
-    background VARCHAR(100) NULLABLE,
-    style VARCHAR(100) NULLABLE,
-    created_at TIMESTAMP NULLABLE,
-    updated_at TIMESTAMP NULLABLE,
-    FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-```
-
-### 4.7 `maya_posts` Table
-```sql
-CREATE TABLE maya_posts (
-    id CHAR(36) PRIMARY KEY NOT NULL, -- UUID
-    tenant_id INTEGER NOT NULL,
-    user_id INTEGER NOT NULL,
-    platform VARCHAR(50) NOT NULL, -- 'instagram', 'tiktok'
-    caption TEXT NULLABLE,
-    media_urls JSON NOT NULL,
-    scheduled_at TIMESTAMP NULLABLE,
-    status VARCHAR(50) NOT NULL DEFAULT 'draft', -- 'draft', 'scheduled', 'published', 'failed'
-    meta_post_id VARCHAR(255) NULLABLE,
-    error_message TEXT NULLABLE,
-    created_at TIMESTAMP NULLABLE,
-    updated_at TIMESTAMP NULLABLE,
-    FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-```
-
-### 4.8 `echo_analytics` Table
-```sql
-CREATE TABLE echo_analytics (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    tenant_id INTEGER NOT NULL,
-    platform VARCHAR(50) NOT NULL,
-    reach INTEGER NOT NULL DEFAULT 0,
-    likes INTEGER NOT NULL DEFAULT 0,
-    comments INTEGER NOT NULL DEFAULT 0,
-    shares INTEGER NOT NULL DEFAULT 0,
-    views INTEGER NOT NULL DEFAULT 0,
-    date DATE NOT NULL,
-    created_at TIMESTAMP NULLABLE,
-    updated_at TIMESTAMP NULLABLE,
-    FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
-);
-```
-
-### 4.9 `kai_devices` Table
-```sql
-CREATE TABLE kai_devices (
-    id CHAR(36) PRIMARY KEY NOT NULL, -- UUID
-    tenant_id INTEGER NOT NULL,
-    device_name VARCHAR(255) NOT NULL,
-    phone_number VARCHAR(100) NULLABLE,
-    status VARCHAR(50) NOT NULL DEFAULT 'pending', -- 'pending', 'paired', 'disconnected'
-    paired_at TIMESTAMP NULLABLE,
-    created_at TIMESTAMP NULLABLE,
-    updated_at TIMESTAMP NULLABLE,
-    FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
-);
-```
-
-### 4.10 `kai_messages` Table
-```sql
-CREATE TABLE kai_messages (
-    id CHAR(36) PRIMARY KEY NOT NULL, -- UUID
-    tenant_id INTEGER NOT NULL,
-    device_id CHAR(36) NOT NULL,
-    sender_number VARCHAR(100) NOT NULL,
-    message_text TEXT NOT NULL,
-    response_text TEXT NULLABLE,
-    type VARCHAR(50) NOT NULL DEFAULT 'chat', -- 'chat', 'broadcast', 'handoff', 'system'
-    status VARCHAR(50) NOT NULL DEFAULT 'success', -- 'success', 'pending', 'failed'
-    created_at TIMESTAMP NULLABLE,
-    updated_at TIMESTAMP NULLABLE,
-    FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
-    FOREIGN KEY (device_id) REFERENCES kai_devices(id) ON DELETE CASCADE
-);
-```
-
-### 4.11 `fluxy_notifications` Table
-```sql
-CREATE TABLE fluxy_notifications (
-    id CHAR(36) PRIMARY KEY NOT NULL, -- UUID
-    user_id INTEGER NOT NULL,
-    type VARCHAR(100) NOT NULL,
-    title VARCHAR(255) NOT NULL,
-    message TEXT NOT NULL,
-    data JSON NULLABLE,
-    read_at TIMESTAMP NULLABLE,
-    created_at TIMESTAMP NULLABLE,
-    updated_at TIMESTAMP NULLABLE,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-```
+### 4.2 Module Specific Models
+10. **`SocialAccount`**: Connected Meta / Instagram / TikTok accounts.
+11. **`Post`**: Social media scheduled/published posts (`platform`, `caption`, `media_urls`, `scheduled_at`, `status`).
+12. **`Content`**: Tracked social media content items.
+13. **`ContentMetric`**: Individual post engagement metrics.
+14. **`ImageGeneration` / `PixelImage`**: Generated product AI photos (`url`, `prompt`, `aspect_ratio`, `lighting`, `background`, `style`).
+15. **`MediaAsset`**: Uploaded media library assets.
+16. **`KaiDevice`**: Connected WhatsApp devices (`wa_number`, `session_id`, `qr_code`, `qr_expires_at`, `status` [qr_ready/connected]).
+17. **`KaiChatbotSetting`**: WhatsApp chatbot configuration & automated response rules.
+18. **`KaiConversation`**: Customer chat threads (`sender_number`, `last_message_at`).
+19. **`KaiConversationMessage`**: Individual messages (`sender_number`, `message_text`, `response_text`, `type`, `status`).
+20. **`KaiGroup`**: Contact broadcast target groups.
+21. **`KaiBroadcast`**: WhatsApp broadcast campaign history.
+22. **`KaiLog`**: WhatsApp service activity logs.
 
 ---
 
@@ -313,218 +162,68 @@ CREATE TABLE fluxy_notifications (
 
 All API routes are grouped under `/api/v1/`.
 
-### 5.1 Authentication API Specification
-
-#### `POST /api/v1/auth/login`
-- **Headers**: `Content-Type: application/json`, `Accept: application/json`
-- **Request Body**:
-  ```json
-  {
-    "email": "user@example.com",
-    "password": "secretpassword"
-  }
-  ```
-- **Response (200 OK)**:
-  ```json
-  {
-    "success": true,
-    "data": {
-      "token": "1|sanctum_bearer_token_string",
-      "user": {
-        "id": 1,
-        "name": "User Name",
-        "email": "user@example.com",
-        "is_admin": false,
-        "is_approved": true,
-        "current_tenant_id": 1
-      }
-    }
-  }
-  ```
-
-#### `POST /api/v1/auth/register`
-- **Request Body**:
-  ```json
-  {
-    "name": "User Name",
-    "email": "user@example.com",
-    "password": "secretpassword",
-    "business_name": "Toko Barokah",
-    "industry_category": "E-commerce / Online Shop"
-  }
-  ```
-- **Response (200 OK)**: Returns user payload. Tenant is created with status `pending`.
-
-#### `GET /api/v1/auth/google/redirect`
-- **Response**: Redirects browser to Google OAuth consent page.
-
-#### `GET /api/v1/auth/google/callback`
-- **Response**: Processes OAuth authorization code, elevates `ibobatsuga@gmail.com` to `is_admin = true`, creates session token, and redirects browser to `https://app.fluxy.id/auth/callback?token=...`.
+| HTTP Method | Endpoint Route | Auth / Middleware | Description |
+| :--- | :--- | :--- | :--- |
+| **POST** | `/api/v1/auth/register` | Public | Register new user & business tenant |
+| **POST** | `/api/v1/auth/login` | Public | Login via Email & Password |
+| **GET** | `/api/v1/auth/me` | Sanctum | Fetch currently authenticated user & tenant profile |
+| **POST** | `/api/v1/auth/logout` | Sanctum | Revoke current user session token |
+| **POST** | `/api/v1/auth/password` | Sanctum | Update user password |
+| **GET** | `/api/v1/auth/google/redirect` | Public | Returns Google OAuth 2.0 authorization URL |
+| **GET** | `/api/v1/auth/google/callback` | Public | Google OAuth callback handler & token generator |
+| **POST** | `/api/v1/pixel/generate` | Sanctum + Approved | Generate AI product image via Gemini API |
+| **GET** | `/api/v1/pixel/gallery` | Sanctum + Approved | Retrieve tenant generated image gallery |
+| **DELETE** | `/api/v1/pixel/{image}` | Sanctum + Approved | Delete a generated pixel image |
+| **GET** | `/api/v1/maya/accounts` | Sanctum + Approved | List connected Instagram & TikTok accounts |
+| **POST** | `/api/v1/maya/connect` | Sanctum + Approved | Connect new social media account via Meta Graph API |
+| **GET** | `/api/v1/maya/posts` | Sanctum + Approved | Fetch scheduled & published posts calendar |
+| **POST** | `/api/v1/maya/posts` | Sanctum + Approved | Create/schedule new social media post |
+| **POST** | `/api/v1/maya/stories/bulk` | Sanctum + Approved | Bulk schedule Instagram stories from GDrive links |
+| **GET** | `/api/v1/analytics` | Sanctum + Approved | Fetch Echo aggregate reach, engagement & growth data |
+| **GET** | `/api/v1/analytics/contents` | Sanctum + Approved | Fetch ranked content performance list |
+| **POST** | `/api/v1/analytics/export` | Sanctum + Approved | Export analytics report (PDF / XLSX) |
+| **GET** | `/api/v1/kai/devices` | Sanctum + Approved | List connected WhatsApp Kai devices |
+| **POST** | `/api/v1/kai/devices/request` | Sanctum + Approved | Request new QR code device pairing |
+| **POST** | `/api/v1/kai/csv/import` | Sanctum + Approved | Import product catalog CSV / Google Sheet |
+| **POST** | `/api/v1/kai/broadcast` | Sanctum + Approved | Dispatch bulk broadcast campaign |
+| **GET** | `/api/v1/kai/logs` | Sanctum + Approved | Fetch Kai message & handover logs |
+| **GET** | `/api/v1/users/pending` | Sanctum + Admin | List all pending tenants awaiting verification |
+| **GET** | `/api/v1/users` | Sanctum + Admin | List all tenants with usage statistics |
+| **POST** | `/api/v1/users/{user}/approve` | Sanctum + Admin | Approve a pending tenant (set status = active) |
+| **POST** | `/api/v1/users/{user}/reject` | Sanctum + Admin | Reject / delete a tenant application |
+| **POST** | `/api/v1/users/{user}/suspend` | Sanctum + Admin | Suspend an active tenant |
+| **PUT** | `/api/v1/config/limits` | Sanctum + Admin | Update global platform quota limits |
 
 ---
 
-### 5.2 Pixel AI API Specification
+## 6. Detailed Services Architecture & Internal Business Logic
 
-#### `POST /api/v1/pixel/generate`
-- **Headers**: `Authorization: Bearer <token>`, `Content-Type: multipart/form-data`
-- **Request Parameters**:
-  - `image_file`: File (JPG/PNG image, optional if `gdrive_link` provided)
-  - `gdrive_link`: String (public Google Drive URL, optional if `image_file` provided)
-  - `content_type`: String (`feed` or `story`)
-  - `lighting`: String (e.g. `warm studio lighting`, `natural`)
-  - `background`: String (e.g. `white studio background`, `marble`)
-  - `style`: String (e.g. `minimalist product photography`)
-- **Response (200 OK)**:
-  ```json
-  {
-    "success": true,
-    "data": {
-      "id": "uuid-string",
-      "url": "https://app.fluxy.id/storage/pixel/generated_xyz.png",
-      "aspect_ratio": "1:1",
-      "created_at": "2026-07-31T00:00:00Z"
-    }
-  }
-  ```
+1. **`GeminiImageProvider.php`** (`app/Services/Images/`):
+   - Implements `ImageProvider` contract.
+   - Accepts multipart image upload or Google Drive URL.
+   - Converts image to base64 inline data array.
+   - Constructs visual prompt with strict aspect ratio instructions (`1:1`, `4:5`, `16:9`, `9:16`) and studio lighting styles.
+   - Calls Google Gemini API (`GEMINI_API_KEY`, model `gemini-flash-latest`).
+   - Saves output file to `storage/app/public/pixel/` and returns public URL `https://app.fluxy.id/storage/pixel/...`.
 
----
+2. **`WhatsAppQrGatewayService.php`** (`app/Services/Kai/`):
+   - Generates WhatsApp Web pairing session ID (`wa_qr_{tenant_id}_{rand}`).
+   - Constructs SVG QR code data URI payload (`2@...`).
+   - Sets 2-minute QR code expiration window (`qr_expires_at`).
+   - Auto-refreshes expired QR codes on status polling (`checkStatus()`).
 
-### 5.3 Maya Social Media API Specification
+3. **`MetaService.php`** (`app/Services/Meta/`):
+   - Handles Meta Graph API v24.0 integration.
+   - Connects Facebook Pages & Instagram Business Accounts (`/v24.0/me/accounts`).
+   - Manages media container creation (`/{ig_user_id}/media`) and publication (`/{ig_user_id}/media_publish`).
+   - Fetches page insights & media metrics for Echo analytics.
 
-#### `GET /api/v1/maya/posts`
-- **Response (200 OK)**: Returns list of scheduled and published social media posts for current tenant.
+4. **`UsageService.php`** (`app/Services/`):
+   - Enforces monthly quota limits per tenant based on active subscription plan (`UsageService::DEFAULT_LIMITS`).
+   - Tracks monthly generation counts for Pixel images, Maya posts, Kai broadcasts, and Echo exports.
 
-#### `POST /api/v1/maya/posts`
-- **Request Body**:
-  ```json
-  {
-    "platform": "instagram",
-    "caption": "Promo Spesial Hari Ini! Sikat!",
-    "media_urls": ["https://app.fluxy.id/storage/pixel/generated_xyz.png"],
-    "scheduled_at": "2026-08-01 10:00:00"
-  }
-  ```
-
----
-
-### 5.4 Echo Analytics API Specification
-
-#### `GET /api/v1/analytics`
-- **Query Params**: `platform=all|instagram|tiktok`, `from=YYYY-MM-DD`, `to=YYYY-MM-DD`
-- **Response (200 OK)**:
-  ```json
-  {
-    "success": true,
-    "data": {
-      "overview": {
-        "total_reach": 154200,
-        "total_engagement": 12850,
-        "followers_count": 8450,
-        "followers_growth": 4.5,
-        "engagement_rate": 8.3
-      },
-      "daily": [
-        { "date": "2026-07-01", "reach": 4200, "engagement": 380 }
-      ]
-    }
-  }
-  ```
-
----
-
-### 5.5 Kai WhatsApp & Chatbot API Specification
-
-#### `POST /api/v1/kai/csv/import`
-- **Headers**: `Content-Type: multipart/form-data`
-- **Request**: CSV product inventory file with columns `product_name`, `price`, `stock`.
-- **Response (200 OK)**: Updates chatbot product knowledge base.
-
-#### `POST /api/v1/kai/broadcast`
-- **Request Body**:
-  ```json
-  {
-    "group_ids": [1, 2],
-    "message": "Halo Kak! Diskon 20% khusus hari ini!",
-    "image_url": "https://app.fluxy.id/storage/pixel/promo.png"
-  }
-  ```
-
----
-
-### 5.6 Admin Management API Specification
-
-#### `GET /api/v1/users`
-- **Headers**: `Authorization: Bearer <token>` (Superadmin required)
-- **Response (200 OK)**: Returns list of all registered business tenants with active resource usage statistics.
-
-#### `POST /api/v1/users/{user}/approve`
-- **Response (200 OK)**: Sets tenant `status = 'active'` and `approved_at = now()`.
-
----
-
-## 6. Comprehensive Module Execution Workflows
-
-### 6.1 Authentication & Authorization Module Flow
-1. **Email Authentication**:
-   - `POST /api/v1/auth/login` checks credentials in `users` table via `Hash::check`.
-   - On success, creates a Sanctum token (`$user->createToken('web')`) and returns `token` + `user` object.
-2. **Google OAuth 2.0 Flow**:
-   - Clicking "Masuk dengan Google" redirects the browser to `/api/v1/auth/google/redirect`.
-   - `AuthController::googleRedirect()` uses Laravel Socialite stateless driver to generate Google redirect URL.
-   - User authenticates on Google ➔ Google redirects back to `https://app.fluxy.id/api/v1/auth/google/callback?code=...`.
-   - `AuthController::googleCallback()` fetches user details.
-   - **Owner Auto-Elevation Logic**:
-     If email is `ibobatsuga@gmail.com`, Laravel sets `is_admin = true` and tenant status `active`.
-     For other emails, Laravel creates a tenant with status `pending` and `is_admin = false`.
-   - Controller redirects browser to `https://app.fluxy.id/auth/callback?token=<token>`.
-   - `oauth-callback.tsx` receives token, sets Zustand store state, fetches user info, and navigates:
-     - `is_admin = true` or `status = active` ➔ `/dashboard`.
-     - `status = pending` ➔ `/pending-approval`.
-
----
-
-### 6.2 Pixel AI Module Flow
-1. User uploads a product image file or inputs a public Google Drive URL in `pixel-page.tsx`.
-2. Selects aspect ratio (`1:1`, `4:5`, `16:9`, `9:16`), lighting (`warm studio`, `natural`, etc.), background (`marble`, `white studio`), and photo style.
-3. Frontend sends `POST /api/v1/pixel/generate` with multipart form data.
-4. `PixelController` calls `UsageService::checkLimit($tenant, 'pixel')` to enforce monthly usage limits.
-5. `PixelController` passes input parameters to `ImageProvider` interface, resolved in `AppServiceProvider` as `GeminiImageProvider`.
-6. `GeminiImageProvider` converts input image to base64 inline data, constructs prompt with aspect ratio & lighting rules, calls Google Gemini API (`GEMINI_API_KEY`, model `gemini-flash-latest`).
-7. Resulting image blob is saved to `/var/www/fluxy/fluxy-backend/storage/app/public/pixel/` and recorded in `pixel_images` database table.
-8. Public URL (`https://app.fluxy.id/storage/pixel/...`) is returned to React frontend to display in gallery.
-
----
-
-### 6.3 Maya Social Media Module Flow
-1. **Account Integration**: User connects Instagram Business or Facebook Page via Meta Graph API (`META_APP_ID`, `META_SYSTEM_USER_TOKEN`).
-2. **Post Creation & AI Caption**: User inputs topic, selects platform, and attaches media.
-3. **Scheduling**: `POST /api/v1/maya/posts` saves post record with `scheduled` status.
-4. **Publishing**: `MetaService` triggers publish via Meta Graph API `/v24.0/{ig_user_id}/media` container creation & `/media_publish`.
-5. **Bulk Stories Scheduler**: User uploads multiple Google Drive media links with slot per day rule; system auto-creates story publication queue.
-
----
-
-### 6.4 Echo Social Analytics Module Flow
-1. `GET /api/v1/analytics?platform=all&from=YYYY-MM-DD&to=YYYY-MM-DD` fetches aggregate reach, engagement, followers growth %, and daily timeseries metrics.
-2. `GET /api/v1/analytics/contents` ranks top posts by reach, likes, comments, shares, views.
-3. `POST /api/v1/analytics/export` generates PDF / XLSX summary reports.
-
----
-
-### 6.5 Kai Chatbot & WhatsApp Module Flow
-1. **Device Pairing**: QR code device activation request (`POST /api/v1/kai/devices/request`).
-2. **Inventory Catalog Ingestion**: Imports product CSV / Google Sheet for inventory, pricing, and stock querying.
-3. **Auto-Response & Handover**: When customer inquiry matches payment/checkout keywords, chatbot notifies human admin (`admin_wa_number`) and logs handover record.
-4. **Broadcast Campaigns**: `POST /api/v1/kai/broadcast` dispatches bulk broadcast messages to targeted contact groups.
-
----
-
-### 6.6 Admin Management Module Flow
-1. Superadmin (`ibobatsuga@gmail.com` or `admin@fluxy.local`) opens `https://app.fluxy.id/admin/tenants`.
-2. `GET /api/v1/users` lists all registered tenant businesses with usage stats and pending/active statuses.
-3. **Approve Action**: `POST /api/v1/users/{user}/approve` updates tenant status to `active` and sets `approved_at = now()`. The tenant user can now access the full dashboard.
-4. **Reject / Suspend Action**: `POST /api/v1/users/{user}/reject` or `suspend` disables tenant access.
-5. **Limit Configuration**: `PUT /api/v1/config/limits` updates resource limits per module.
+5. **`AuditService.php`** (`app/Services/`):
+   - Records administrative audit trails into `audit_logs` table (`AuditService::log($tenant, $action, $description, $metadata)`).
 
 ---
 
