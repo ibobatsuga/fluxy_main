@@ -26,7 +26,7 @@ RUN apk add --no-cache \
     curl \
     git \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install gd pdo pdo_sqlite mbstring zip intl bcmath
+    && docker-php-ext-install gd pdo_sqlite pdo_mysql zip intl bcmath
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
