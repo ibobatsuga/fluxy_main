@@ -7,6 +7,9 @@ ENV_FILE="/var/www/fluxy/fluxy-backend/.env"
 
 echo "Updating Fluxy source code & configuration..."
 
+sudo git config --global --add safe.directory /var/www/fluxy || true
+git config --global --add safe.directory /var/www/fluxy || true
+
 cd /var/www/fluxy
 sudo git fetch origin main
 sudo git reset --hard origin/main
