@@ -15,7 +15,7 @@ if [[ ! -f "${ENV_FILE}" ]]; then
     exit 1
 fi
 
-if ! grep -Eq '^APP_KEY=base64:.+' "${ENV_FILE}"; then
+if ! sudo grep -Eq '^APP_KEY=base64:.+' "${ENV_FILE}"; then
     echo "ERROR: APP_KEY is missing from ${ENV_FILE}."
     exit 1
 fi
