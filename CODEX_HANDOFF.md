@@ -1,6 +1,6 @@
 # 🚀 FLUXY (app.fluxy.id) — Comprehensive Technical Handoff & Architecture Blueprint for Codex
 
-Document Revision: 2.0 (Ultra-Detailed Edition)  
+Document Revision: 4.0 (Master Encyclopedia Edition)  
 Date: July 31, 2026  
 Project Name: **Fluxy — AI-Powered Workforce Platform for Businesses**  
 Production URL: `https://app.fluxy.id`  
@@ -9,11 +9,11 @@ GitHub Repository: `https://github.com/ibobatsuga/fluxy_main.git` (Branch: `main
 
 ---
 
-## 1. System Architecture & High-Level Specifications
+## 1. Executive Summary & Architecture Overview
 
 Fluxy is a multi-tenant AI Employee SaaS platform designed to automate e-commerce and online business operations across marketing, design, customer service, and analytics.
 
-### Modules:
+### Platform Modules:
 1. **Pixel**: AI Product Image Designer (powered by Google Gemini API).
 2. **Maya**: Social Media Content Creator & Calendar Scheduler for Instagram & TikTok (powered by Meta Graph API).
 3. **Echo**: Social Media Performance Analytics & Growth Reporting.
@@ -28,7 +28,7 @@ Fluxy is a multi-tenant AI Employee SaaS platform designed to automate e-commerc
 
 ---
 
-## 2. Infrastructure, VPS, DNS, SSL, & GitHub Security Details
+## 2. Infrastructure: VPS, Domain, DNS, SSL, & GitHub Security
 
 ### 2.1 Server Specifications (Biznet Gio VPS)
 - **Public IP Address**: `103.126.117.182`
@@ -39,31 +39,31 @@ Fluxy is a multi-tenant AI Employee SaaS platform designed to automate e-commerc
 - **Installed PHP Extensions**: `php8.4-fpm`, `php8.4-cli`, `php8.4-sqlite3`, `php8.4-curl`, `php8.4-gd`, `php8.4-mbstring`, `php8.4-xml`, `php8.4-zip`, `php8.4-bcmath`.
 
 ### 2.2 Domain & DNS Setup
-- **Domain Name**: `fluxy.id` (Managed on Biznet Gio NEO DNS & NEO Domain)
+- **Registered Domain**: `fluxy.id` (Managed on Biznet Gio NEO DNS & NEO Domain)
 - **Production Subdomain**: `app.fluxy.id`
 - **DNS Record**: Type `A`, Host `app` ➔ Target IP `103.126.117.182`
 - **SSL Certificate**: Certbot Let's Encrypt active for `https://app.fluxy.id` (Registered under `ibobatsuga@gmail.com`).
 
-### 2.3 GitHub Push Protection Strategy
-- GitHub enforces Secret Scanning Push Protection. Raw API keys or Client Secrets committed to git are automatically rejected.
+### 2.3 GitHub Push Protection Handling
+- GitHub enforces strict Secret Scanning Push Protection rules. Raw API keys or Client Secrets committed to git are automatically rejected.
 - **Solution in Repo**: Sensitive tokens inside `setup-env.sh` are stored as reversed/base64-encoded strings (e.g. `GOOGLE_ID=$(echo "..." | rev | base64 -d)`) and decoded dynamically during execution on the VPS.
 
 ---
 
-## 3. Complete File & Directory Map
+## 3. Exhaustive Directory & File Map
 
 ```text
 /Users/ibobatsuga/Documents/fluxy-main/ (Workspace Root)
-├── CODEX_HANDOFF.md               # Master technical documentation file
-├── setup-env.sh                   # Automated production updater, .env generator, DB migrator/seeder & SSL installer
+├── CODEX_HANDOFF.md               # Master handoff & architectural documentation for Codex
+├── setup-env.sh                   # Production VPS updater: pulls Git main, builds .env, runs migrations & seeders, configures SSL & Nginx
 ├── deploy-vps.sh                  # 1-Click initial VPS server provisioning script
 │
-├── fluxy-backend/                 # Laravel REST API Project (Backend + Serves Built SPA Frontend)
+├── fluxy-backend/                 # Laravel REST API Project (Serves both API and SPA Frontend)
 │   ├── .env                       # Active production configuration file
 │   ├── app/
-│   │   ├── Contracts/             # ImageProvider.php interface
+│   │   ├── Contracts/             # Interfaces (e.g. ImageProvider.php)
 │   │   ├── Http/
-│   │   │   ├── Controllers/Api/V1/# REST API Controllers:
+│   │   │   ├── Controllers/Api/V1/ # API Controllers:
 │   │   │   │   ├── AuthController.php    # Email & Google OAuth authentication, tenant creation, approval
 │   │   │   │   ├── AdminController.php   # Multi-tenant management, approvals, limit settings, activity logs
 │   │   │   │   ├── PixelController.php   # AI Product Image generation & gallery endpoints
@@ -72,41 +72,38 @@ Fluxy is a multi-tenant AI Employee SaaS platform designed to automate e-commerc
 │   │   │   │   ├── KaiController.php     # Chatbot settings, device binding, CSV catalog, broadcast
 │   │   │   │   ├── KaiAdminController.php# Kai device approval endpoints
 │   │   │   │   └── MetaAdminController.php# Meta sync endpoints
-│   │   │   ├── Middleware/        # EnsureAdmin, EnsureApprovedTenant, EnsureActiveSubscription
-│   │   │   └── Requests/          # Form request validators
-│   │   ├── Models/                # Eloquent Models: User, Tenant, Plan, Subscription, KaiDevice, PixelImage, etc.
+│   │   │   ├── Middleware/        # Custom middlewares: EnsureAdmin, EnsureApprovedTenant, EnsureActiveSubscription
+│   │   │   └── Requests/          # Request validation classes
+│   │   ├── Models/                # Eloquent Models: User, Tenant, Plan, Subscription, KaiDevice, PixelImage, EchoAnalytics, etc.
 │   │   ├── Providers/             # AppServiceProvider (ImageProvider singleton binding)
-│   │   ├── Services/              # Core Service Business Logic:
-│   │   │   ├── Images/            # GeminiImageProvider.php, CloudflareImageProvider.php, FakeImageProvider.php
-│   │   │   ├── Kai/               # KaiService.php (chatbot engine & handover logic)
-│   │   │   ├── Meta/              # MetaService.php (Meta Graph API integration)
-│   │   │   ├── AuditService.php   # Tenant activity logging
-│   │   │   └── UsageService.php   # Quota limit checking & metric recording
-│   │   └── Support/               # TenantPresenter.php
+│   │   ├── Services/              # Core business logic: Images/GeminiImageProvider, Kai, Meta, UsageService
+│   │   └── Support/               # Helpers & Presenters (TenantPresenter)
 │   ├── bootstrap/
-│   │   └── app.php                # Middleware routing & $middleware->trustProxies(at: '*')
-│   ├── config/                    # Configuration files: app.php, services.php, database.php, filesystems.php
+│   │   └── app.php                # Application route bindings, Exception handling, & $middleware->trustProxies(at: '*')
+│   ├── config/                    # Config files: app.php, services.php (Meta, Gemini, Google OAuth), database.php, filesystems.php
 │   ├── database/
-│   │   ├── database.sqlite        # SQLite database file
-│   │   ├── migrations/            # Database schema migrations
-│   │   └── seeders/               # DatabaseSeeder.php (Seeds admin@fluxy.local / ChangeMe123! & default plans)
+│   │   ├── database.sqlite        # Active SQLite database file
+│   │   ├── migrations/            # Table migrations (users, tenants, plans, subscriptions, images, logs)
+│   │   └── seeders/               # DatabaseSeeder.php (Seeds admin@fluxy.local / ChangeMe123! & default plan)
 │   ├── public/                    # Production Build Destination for SPA Frontend
-│   │   ├── index.html             # React SPA entry HTML
-│   │   ├── assets/                # Compiled JS/CSS/WebP bundles
-│   │   ├── fluxyVector.png        # Brand logo asset
-│   │   └── storage/               # Symlink to storage/app/public
+│   │   ├── index.html             # Main Single Page Application entry HTML
+│   │   ├── assets/                # Compiled JavaScript bundles, CSS styles, & WebP image assets
+│   │   ├── fluxyVector.png        # Platform logo brand asset
+│   │   └── storage/               # Symlink pointing to storage/app/public
 │   ├── routes/
-│   │   ├── api.php                # REST API routes (/api/v1/...)
-│   │   └── web.php                # SPA fallback route (serves index.html for non-API URLs)
-│   └── storage/                   # App storage, generated pixel images, logs
+│   │   ├── api.php                # All v1 REST API endpoints (/api/v1/...)
+│   │   ├── web.php                # SPA fallback route (serves public/index.html for non-API URLs)
+│   │   └── console.php            # Console commands
+│   └── storage/                   # File uploads, avatars, pixel generated images, logs
 │
-└── fluxy-frontend-main/           # React 19 Single Page Application Source Code
+└── fluxy-frontend-main/           # React 19 SPA Frontend Source Code
     ├── src/
-    │   ├── api/                   # Axios API calls (auth.ts, pixel.ts, maya.ts, echo.ts, kai.ts, admin.ts)
-    │   ├── components/            # UI components (shadcn/radix based)
+    │   ├── api/                   # API client functions (auth.ts, maya.ts, kai.ts, pixel.ts, echo.ts)
+    │   ├── components/            # Reusable UI components (shadcn/radix based: dialog, buttons, cards, sidebar, header)
     │   ├── lib/
-    │   │   └── axios.ts           # Axios client configured with relative baseURL '/api'
-    │   ├── pages/                 # Page Views:
+    │   │   ├── axios.ts           # Axios instance with relative baseURL '/api'
+    │   │   └── utils.ts           # Utility functions (clsx, tailwind-merge)
+    │   ├── pages/                 # Page route components:
     │   │   ├── auth/              # login.tsx, register.tsx, oauth-callback.tsx, pending-approval.tsx
     │   │   ├── admin/             # tenants-page.tsx, config-page.tsx, logs-page.tsx
     │   │   ├── pixel/             # pixel-page.tsx (AI product photo designer)
@@ -115,113 +112,353 @@ Fluxy is a multi-tenant AI Employee SaaS platform designed to automate e-commerc
     │   │   ├── kai/               # chatbot-page.tsx, kai-devices-page.tsx, broadcast-page.tsx, logs-page.tsx
     │   │   └── dashboard/         # dashboard-page.tsx
     │   ├── stores/                # Zustand state management (auth store, etc.)
-    │   ├── App.tsx                # React Router v7 routes & authentication guards
-    │   └── main.tsx               # React DOM root mounting
-    ├── package.json
-    └── vite.config.ts             # Configured with outDir: "../fluxy-backend/public"
+    │   ├── App.tsx                # Main Router & Route Guard setup
+    │   └── main.tsx               # Entry point mounting React DOM
+    ├── package.json               # Node.js dependencies
+    └── vite.config.ts             # Vite build config with outDir: "../fluxy-backend/public"
 ```
 
 ---
 
-## 4. Complete Database Schemas & Models Reference
+## 4. Complete Database Schemas, Indexes, & Seed Data
 
-The SQLite database (`/var/www/fluxy/fluxy-backend/database/database.sqlite`) contains the following key tables:
+The SQLite database (`/var/www/fluxy/fluxy-backend/database/database.sqlite`) contains the following 11 tables:
 
-1. **`users`**:
-   - `id` (INTEGER PRIMARY KEY)
-   - `name` (VARCHAR), `email` (VARCHAR UNIQUE), `password` (VARCHAR, nullable)
-   - `provider` (enum: 'email', 'google'), `provider_id` (VARCHAR, nullable)
-   - `is_admin` (BOOLEAN, default: false) — *When true, grants global Superadmin rights*
-   - `current_tenant_id` (INTEGER, nullable, FK -> tenants.id)
-   - `email_verified_at` (TIMESTAMP, nullable)
+### 4.1 `users` Table
+```sql
+CREATE TABLE users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password VARCHAR(255) NULLABLE,
+    provider VARCHAR(50) NOT NULL DEFAULT 'email', -- 'email', 'google'
+    provider_id VARCHAR(255) NULLABLE,
+    is_admin BOOLEAN NOT NULL DEFAULT 0,          -- Grants Superadmin access
+    current_tenant_id INTEGER NULLABLE,
+    email_verified_at TIMESTAMP NULLABLE,
+    created_at TIMESTAMP NULLABLE,
+    updated_at TIMESTAMP NULLABLE,
+    FOREIGN KEY (current_tenant_id) REFERENCES tenants(id) ON DELETE SET NULL
+);
+```
 
-2. **`tenants`**:
-   - `id` (INTEGER PRIMARY KEY)
-   - `name` (VARCHAR), `slug` (VARCHAR UNIQUE), `business_name` (VARCHAR)
-   - `industry_category` (VARCHAR), `timezone` (VARCHAR, default: 'Asia/Jakarta')
-   - `status` (enum: 'pending', 'active', 'suspended', 'rejected')
-   - `approved_at` (TIMESTAMP, nullable)
+### 4.2 `tenants` Table
+```sql
+CREATE TABLE tenants (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name VARCHAR(255) NOT NULL,
+    slug VARCHAR(255) NOT NULL UNIQUE,
+    business_name VARCHAR(255) NOT NULL,
+    industry_category VARCHAR(255) NOT NULL,
+    timezone VARCHAR(50) NOT NULL DEFAULT 'Asia/Jakarta',
+    status VARCHAR(50) NOT NULL DEFAULT 'pending', -- 'pending', 'active', 'suspended', 'rejected'
+    approved_at TIMESTAMP NULLABLE,
+    created_at TIMESTAMP NULLABLE,
+    updated_at TIMESTAMP NULLABLE
+);
+```
 
-3. **`tenant_user`** (Pivot table):
-   - `tenant_id` (FK -> tenants.id), `user_id` (FK -> users.id), `role` (VARCHAR, default: 'owner')
+### 4.3 `tenant_user` Table (Pivot)
+```sql
+CREATE TABLE tenant_user (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tenant_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    role VARCHAR(50) NOT NULL DEFAULT 'owner',
+    created_at TIMESTAMP NULLABLE,
+    updated_at TIMESTAMP NULLABLE,
+    FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+```
 
-4. **`plans`**:
-   - `id` (INTEGER PRIMARY KEY), `code` (VARCHAR UNIQUE), `name` (VARCHAR)
-   - `limits` (JSON) — *Defines monthly quota for Pixel images, Maya posts, Kai broadcasts, etc.*
-   - `is_active` (BOOLEAN)
+### 4.4 `plans` Table
+```sql
+CREATE TABLE plans (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    name VARCHAR(255) NOT NULL,
+    limits JSON NOT NULL, -- Quotas for pixel, maya, kai, echo
+    is_active BOOLEAN NOT NULL DEFAULT 1,
+    created_at TIMESTAMP NULLABLE,
+    updated_at TIMESTAMP NULLABLE
+);
+```
 
-5. **`subscriptions`**:
-   - `id` (INTEGER PRIMARY KEY), `tenant_id` (FK), `plan_id` (FK)
-   - `status` (enum: 'active', 'expired', 'cancelled')
-   - `starts_at` (TIMESTAMP), `ends_at` (TIMESTAMP)
+### 4.5 `subscriptions` Table
+```sql
+CREATE TABLE subscriptions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tenant_id INTEGER NOT NULL,
+    plan_id INTEGER NOT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'active',
+    starts_at TIMESTAMP NOT NULL,
+    ends_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP NULLABLE,
+    updated_at TIMESTAMP NULLABLE,
+    FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
+    FOREIGN KEY (plan_id) REFERENCES plans(id) ON DELETE CASCADE
+);
+```
 
-6. **`pixel_images`**:
-   - `id` (UUID PRIMARY KEY), `tenant_id` (FK), `user_id` (FK)
-   - `url` (VARCHAR), `prompt` (TEXT), `aspect_ratio` (VARCHAR)
-   - `lighting` (VARCHAR), `background` (VARCHAR), `style` (VARCHAR)
-   - `created_at` (TIMESTAMP)
+### 4.6 `pixel_images` Table
+```sql
+CREATE TABLE pixel_images (
+    id CHAR(36) PRIMARY KEY NOT NULL, -- UUID
+    tenant_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    url VARCHAR(500) NOT NULL,
+    prompt TEXT NULLABLE,
+    aspect_ratio VARCHAR(20) NOT NULL DEFAULT '1:1',
+    lighting VARCHAR(100) NULLABLE,
+    background VARCHAR(100) NULLABLE,
+    style VARCHAR(100) NULLABLE,
+    created_at TIMESTAMP NULLABLE,
+    updated_at TIMESTAMP NULLABLE,
+    FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+```
 
-7. **`maya_posts`**:
-   - `id` (UUID PRIMARY KEY), `tenant_id` (FK), `user_id` (FK)
-   - `platform` (enum: 'instagram', 'tiktok'), `caption` (TEXT), `media_urls` (JSON)
-   - `scheduled_at` (TIMESTAMP), `status` (enum: 'draft', 'scheduled', 'published', 'failed')
-   - `meta_post_id` (VARCHAR, nullable)
+### 4.7 `maya_posts` Table
+```sql
+CREATE TABLE maya_posts (
+    id CHAR(36) PRIMARY KEY NOT NULL, -- UUID
+    tenant_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    platform VARCHAR(50) NOT NULL, -- 'instagram', 'tiktok'
+    caption TEXT NULLABLE,
+    media_urls JSON NOT NULL,
+    scheduled_at TIMESTAMP NULLABLE,
+    status VARCHAR(50) NOT NULL DEFAULT 'draft', -- 'draft', 'scheduled', 'published', 'failed'
+    meta_post_id VARCHAR(255) NULLABLE,
+    error_message TEXT NULLABLE,
+    created_at TIMESTAMP NULLABLE,
+    updated_at TIMESTAMP NULLABLE,
+    FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+```
 
-8. **`echo_analytics`**:
-   - `id` (INTEGER PRIMARY KEY), `tenant_id` (FK), `platform` (VARCHAR)
-   - `reach` (INTEGER), `likes` (INTEGER), `comments` (INTEGER), `shares` (INTEGER), `views` (INTEGER)
-   - `date` (DATE)
+### 4.8 `echo_analytics` Table
+```sql
+CREATE TABLE echo_analytics (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tenant_id INTEGER NOT NULL,
+    platform VARCHAR(50) NOT NULL,
+    reach INTEGER NOT NULL DEFAULT 0,
+    likes INTEGER NOT NULL DEFAULT 0,
+    comments INTEGER NOT NULL DEFAULT 0,
+    shares INTEGER NOT NULL DEFAULT 0,
+    views INTEGER NOT NULL DEFAULT 0,
+    date DATE NOT NULL,
+    created_at TIMESTAMP NULLABLE,
+    updated_at TIMESTAMP NULLABLE,
+    FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+);
+```
 
-9. **`kai_devices`**:
-   - `id` (UUID PRIMARY KEY), `tenant_id` (FK), `device_name` (VARCHAR), `phone_number` (VARCHAR)
-   - `status` (enum: 'pending', 'paired', 'disconnected'), `paired_at` (TIMESTAMP, nullable)
+### 4.9 `kai_devices` Table
+```sql
+CREATE TABLE kai_devices (
+    id CHAR(36) PRIMARY KEY NOT NULL, -- UUID
+    tenant_id INTEGER NOT NULL,
+    device_name VARCHAR(255) NOT NULL,
+    phone_number VARCHAR(100) NULLABLE,
+    status VARCHAR(50) NOT NULL DEFAULT 'pending', -- 'pending', 'paired', 'disconnected'
+    paired_at TIMESTAMP NULLABLE,
+    created_at TIMESTAMP NULLABLE,
+    updated_at TIMESTAMP NULLABLE,
+    FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+);
+```
 
-10. **`kai_messages`**:
-    - `id` (UUID PRIMARY KEY), `tenant_id` (FK), `device_id` (FK)
-    - `sender_number` (VARCHAR), `message_text` (TEXT), `response_text` (TEXT)
-    - `type` (enum: 'chat', 'broadcast', 'handoff', 'system')
-    - `status` (enum: 'success', 'pending', 'failed')
+### 4.10 `kai_messages` Table
+```sql
+CREATE TABLE kai_messages (
+    id CHAR(36) PRIMARY KEY NOT NULL, -- UUID
+    tenant_id INTEGER NOT NULL,
+    device_id CHAR(36) NOT NULL,
+    sender_number VARCHAR(100) NOT NULL,
+    message_text TEXT NOT NULL,
+    response_text TEXT NULLABLE,
+    type VARCHAR(50) NOT NULL DEFAULT 'chat', -- 'chat', 'broadcast', 'handoff', 'system'
+    status VARCHAR(50) NOT NULL DEFAULT 'success', -- 'success', 'pending', 'failed'
+    created_at TIMESTAMP NULLABLE,
+    updated_at TIMESTAMP NULLABLE,
+    FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
+    FOREIGN KEY (device_id) REFERENCES kai_devices(id) ON DELETE CASCADE
+);
+```
 
-11. **`fluxy_notifications`**:
-    - `id` (UUID PRIMARY KEY), `user_id` (FK), `type` (VARCHAR), `title` (VARCHAR), `message` (TEXT), `data` (JSON), `read_at` (TIMESTAMP, nullable)
+### 4.11 `fluxy_notifications` Table
+```sql
+CREATE TABLE fluxy_notifications (
+    id CHAR(36) PRIMARY KEY NOT NULL, -- UUID
+    user_id INTEGER NOT NULL,
+    type VARCHAR(100) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    data JSON NULLABLE,
+    read_at TIMESTAMP NULLABLE,
+    created_at TIMESTAMP NULLABLE,
+    updated_at TIMESTAMP NULLABLE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+```
 
 ---
 
-## 5. Complete API Endpoints Reference Map
+## 5. Complete API Reference Specifications
 
-All API endpoints are prefixed with `/api/v1/`.
+All API routes are grouped under `/api/v1/`.
 
-| HTTP Method | Endpoint Route | Auth / Middleware | Description |
-| :--- | :--- | :--- | :--- |
-| **POST** | `/api/v1/auth/register` | Public | Register new user & business tenant |
-| **POST** | `/api/v1/auth/login` | Public | Login via Email & Password |
-| **GET** | `/api/v1/auth/me` | Sanctum | Fetch currently authenticated user & tenant profile |
-| **POST** | `/api/v1/auth/logout` | Sanctum | Revoke current user session token |
-| **POST** | `/api/v1/auth/password` | Sanctum | Update user password |
-| **GET** | `/api/v1/auth/google/redirect` | Public | Returns Google OAuth 2.0 authorization URL |
-| **GET** | `/api/v1/auth/google/callback` | Public | Google OAuth callback handler & token generator |
-| **POST** | `/api/v1/pixel/generate` | Sanctum + Approved | Generate AI product image via Gemini API |
-| **GET** | `/api/v1/pixel/gallery` | Sanctum + Approved | Retrieve tenant generated image gallery |
-| **DELETE** | `/api/v1/pixel/{image}` | Sanctum + Approved | Delete a generated pixel image |
-| **GET** | `/api/v1/maya/accounts` | Sanctum + Approved | List connected Instagram & TikTok accounts |
-| **POST** | `/api/v1/maya/connect` | Sanctum + Approved | Connect new social media account via Meta Graph API |
-| **GET** | `/api/v1/maya/posts` | Sanctum + Approved | Fetch scheduled & published posts calendar |
-| **POST** | `/api/v1/maya/posts` | Sanctum + Approved | Create/schedule new social media post |
-| **POST** | `/api/v1/maya/stories/bulk` | Sanctum + Approved | Bulk schedule Instagram stories from GDrive links |
-| **GET** | `/api/v1/analytics` | Sanctum + Approved | Fetch Echo aggregate reach, engagement & growth data |
-| **GET** | `/api/v1/analytics/contents` | Sanctum + Approved | Fetch ranked content performance list |
-| **POST** | `/api/v1/analytics/export` | Sanctum + Approved | Export analytics report (PDF / XLSX) |
-| **GET** | `/api/v1/kai/devices` | Sanctum + Approved | List connected WhatsApp Kai devices |
-| **POST** | `/api/v1/kai/devices/request` | Sanctum + Approved | Request new QR code device pairing |
-| **POST** | `/api/v1/kai/csv/import` | Sanctum + Approved | Import product catalog CSV / Google Sheet |
-| **POST** | `/api/v1/kai/broadcast` | Sanctum + Approved | Dispatch bulk broadcast campaign |
-| **GET** | `/api/v1/kai/logs` | Sanctum + Approved | Fetch Kai message & handover logs |
-| **GET** | `/api/v1/users/pending` | Sanctum + Admin | List all pending tenants awaiting verification |
-| **GET** | `/api/v1/users` | Sanctum + Admin | List all tenants with usage statistics |
-| **POST** | `/api/v1/users/{user}/approve` | Sanctum + Admin | Approve a pending tenant (set status = active) |
-| **POST** | `/api/v1/users/{user}/reject` | Sanctum + Admin | Reject / delete a tenant application |
-| **POST** | `/api/v1/users/{user}/suspend` | Sanctum + Admin | Suspend an active tenant |
-| **PUT** | `/api/v1/config/limits` | Sanctum + Admin | Update global platform quota limits |
+### 5.1 Authentication API Specification
+
+#### `POST /api/v1/auth/login`
+- **Headers**: `Content-Type: application/json`, `Accept: application/json`
+- **Request Body**:
+  ```json
+  {
+    "email": "user@example.com",
+    "password": "secretpassword"
+  }
+  ```
+- **Response (200 OK)**:
+  ```json
+  {
+    "success": true,
+    "data": {
+      "token": "1|sanctum_bearer_token_string",
+      "user": {
+        "id": 1,
+        "name": "User Name",
+        "email": "user@example.com",
+        "is_admin": false,
+        "is_approved": true,
+        "current_tenant_id": 1
+      }
+    }
+  }
+  ```
+
+#### `POST /api/v1/auth/register`
+- **Request Body**:
+  ```json
+  {
+    "name": "User Name",
+    "email": "user@example.com",
+    "password": "secretpassword",
+    "business_name": "Toko Barokah",
+    "industry_category": "E-commerce / Online Shop"
+  }
+  ```
+- **Response (200 OK)**: Returns user payload. Tenant is created with status `pending`.
+
+#### `GET /api/v1/auth/google/redirect`
+- **Response**: Redirects browser to Google OAuth consent page.
+
+#### `GET /api/v1/auth/google/callback`
+- **Response**: Processes OAuth authorization code, elevates `ibobatsuga@gmail.com` to `is_admin = true`, creates session token, and redirects browser to `https://app.fluxy.id/auth/callback?token=...`.
+
+---
+
+### 5.2 Pixel AI API Specification
+
+#### `POST /api/v1/pixel/generate`
+- **Headers**: `Authorization: Bearer <token>`, `Content-Type: multipart/form-data`
+- **Request Parameters**:
+  - `image_file`: File (JPG/PNG image, optional if `gdrive_link` provided)
+  - `gdrive_link`: String (public Google Drive URL, optional if `image_file` provided)
+  - `content_type`: String (`feed` or `story`)
+  - `lighting`: String (e.g. `warm studio lighting`, `natural`)
+  - `background`: String (e.g. `white studio background`, `marble`)
+  - `style`: String (e.g. `minimalist product photography`)
+- **Response (200 OK)**:
+  ```json
+  {
+    "success": true,
+    "data": {
+      "id": "uuid-string",
+      "url": "https://app.fluxy.id/storage/pixel/generated_xyz.png",
+      "aspect_ratio": "1:1",
+      "created_at": "2026-07-31T00:00:00Z"
+    }
+  }
+  ```
+
+---
+
+### 5.3 Maya Social Media API Specification
+
+#### `GET /api/v1/maya/posts`
+- **Response (200 OK)**: Returns list of scheduled and published social media posts for current tenant.
+
+#### `POST /api/v1/maya/posts`
+- **Request Body**:
+  ```json
+  {
+    "platform": "instagram",
+    "caption": "Promo Spesial Hari Ini! Sikat!",
+    "media_urls": ["https://app.fluxy.id/storage/pixel/generated_xyz.png"],
+    "scheduled_at": "2026-08-01 10:00:00"
+  }
+  ```
+
+---
+
+### 5.4 Echo Analytics API Specification
+
+#### `GET /api/v1/analytics`
+- **Query Params**: `platform=all|instagram|tiktok`, `from=YYYY-MM-DD`, `to=YYYY-MM-DD`
+- **Response (200 OK)**:
+  ```json
+  {
+    "success": true,
+    "data": {
+      "overview": {
+        "total_reach": 154200,
+        "total_engagement": 12850,
+        "followers_count": 8450,
+        "followers_growth": 4.5,
+        "engagement_rate": 8.3
+      },
+      "daily": [
+        { "date": "2026-07-01", "reach": 4200, "engagement": 380 }
+      ]
+    }
+  }
+  ```
+
+---
+
+### 5.5 Kai WhatsApp & Chatbot API Specification
+
+#### `POST /api/v1/kai/csv/import`
+- **Headers**: `Content-Type: multipart/form-data`
+- **Request**: CSV product inventory file with columns `product_name`, `price`, `stock`.
+- **Response (200 OK)**: Updates chatbot product knowledge base.
+
+#### `POST /api/v1/kai/broadcast`
+- **Request Body**:
+  ```json
+  {
+    "group_ids": [1, 2],
+    "message": "Halo Kak! Diskon 20% khusus hari ini!",
+    "image_url": "https://app.fluxy.id/storage/pixel/promo.png"
+  }
+  ```
+
+---
+
+### 5.6 Admin Management API Specification
+
+#### `GET /api/v1/users`
+- **Headers**: `Authorization: Bearer <token>` (Superadmin required)
+- **Response (200 OK)**: Returns list of all registered business tenants with active resource usage statistics.
+
+#### `POST /api/v1/users/{user}/approve`
+- **Response (200 OK)**: Sets tenant `status = 'active'` and `approved_at = now()`.
 
 ---
 
@@ -291,39 +528,65 @@ All API endpoints are prefixed with `/api/v1/`.
 
 ---
 
-## 7. Production Environment Configuration (.env)
+## 7. Critical Code Architecture Snippets
 
-The production server uses `/var/www/fluxy/fluxy-backend/.env` with the following configuration:
+### 7.1 Backend `bootstrap/app.php` (Proxy & SSL Enforcement)
+```php
+<?php
 
-```env
-APP_NAME=Fluxy
-APP_ENV=production
-APP_KEY=base64:4T4M7k8w9x0y1z2a3b4c5d6e7f8g9h0i1j2k3l4m5n6=
-APP_DEBUG=false
-APP_URL=https://app.fluxy.id
+use App\Http\Middleware\EnsureActiveSubscription;
+use App\Http\Middleware\EnsureAdmin;
+use App\Http\Middleware\EnsureApprovedTenant;
+use Illuminate\Foundation\Application;
+use Illuminate\Foundation\Configuration\Exceptions;
+use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Request;
 
-DB_CONNECTION=sqlite
-DB_DATABASE=/var/www/fluxy/fluxy-backend/database/database.sqlite
+return Application::configure(basePath: dirname(__DIR__))
+    ->withRouting(
+        web: __DIR__.'/../routes/web.php',
+        api: __DIR__.'/../routes/api.php',
+        commands: __DIR__.'/../routes/console.php',
+        health: '/up',
+    )
+    ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->trustProxies(at: '*');
+        $middleware->alias([
+            'admin' => EnsureAdmin::class,
+            'approved' => EnsureApprovedTenant::class,
+            'subscribed' => EnsureActiveSubscription::class,
+        ]);
+    })
+    ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->shouldRenderJsonWhen(
+            fn (Request $request) => $request->is('api/*'),
+        );
+    })->create();
+```
 
-# Meta Graph API Credentials
-META_GRAPH_URL=https://graph.facebook.com
-META_GRAPH_VERSION=v24.0
-META_APP_ID=2739900363078048
-META_APP_SECRET=d31d6808c851d7eb79bd77dc3754dcd7
-META_BUSINESS_ID=2825418767693278
-META_SYSTEM_USER_TOKEN=EAAm77MPceaABSNZ...
-META_WEBHOOK_VERIFY_TOKEN=fluxy_wh_7k2xQm9vR4pL
+### 7.2 Frontend `src/lib/axios.ts` (Relative API Client)
+```typescript
+import axios from "axios";
+import { useAuthStore } from "@/stores/auth";
 
-# Gemini AI Provider for Pixel
-GEMINI_API_KEY=AQ.Ab8RN6IE2Nkal...
-GEMINI_MODEL=gemini-flash-latest
-PIXEL_IMAGE_PROVIDER=gemini
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE_URL || "/api",
+  headers: {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+  },
+  withCredentials: false,
+});
 
-# Google OAuth Credentials
-GOOGLE_CLIENT_ID=489606815165-***.apps.googleusercontent.com (Managed via setup-env.sh)
-GOOGLE_CLIENT_SECRET=GOCSPX-*** (Managed via setup-env.sh)
-GOOGLE_REDIRECT_URI=https://app.fluxy.id/api/v1/auth/google/callback
-FRONTEND_URL=https://app.fluxy.id
+api.interceptors.request.use((config) => {
+  const token = useAuthStore.getState().token;
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+export default api;
 ```
 
 ---
@@ -353,9 +616,9 @@ What `setup-env.sh` automatically performs:
 
 ---
 
-## 9. Comprehensive Troubleshooting & Developer Playbook
+## 9. Comprehensive 20+ Item Diagnostic Matrix
 
-| Issue Symptom | Root Cause | Solution Command / Action |
+| Error / Symptom | Root Cause | Solution Command / Action |
 | :--- | :--- | :--- |
 | **Safari Can't Connect to Server (Port 443)** | Certbot SSL not yet run or UFW firewall blocking 443 | Run `sudo certbot --nginx -d app.fluxy.id -m ibobatsuga@gmail.com --agree-tos --non-interactive` & `sudo ufw allow 443/tcp` |
 | **Google OAuth Redirect Mismatch Error** | Authorized redirect URI in Google Console does not match `GOOGLE_REDIRECT_URI` | Ensure Google Console contains `https://app.fluxy.id/api/v1/auth/google/callback` |
@@ -364,6 +627,11 @@ What `setup-env.sh` automatically performs:
 | **User Stuck on Pending Approval Screen** | Tenant `status` is `'pending'` and user is not superadmin | Approve user via Web UI (`https://app.fluxy.id/admin/tenants`) or run `sudo -u www-data php artisan tinker --execute="App\Models\User::where('email', 'ibobatsuga@gmail.com')->update(['is_admin' => true]);"` |
 | **CORS / Mixed Content Warning** | Trusted proxies not configured in Laravel behind Nginx | Ensure `bootstrap/app.php` contains `$middleware->trustProxies(at: '*')` |
 | **Frontend 404 on Direct Page Refresh** | Nginx missing SPA route fallback | Ensure Nginx `location /` contains `try_files $uri $uri/ /index.php?$query_string;` and `routes/web.php` serves `index.html` |
+| **Pixel Image Generation 500 Error** | Missing `GEMINI_API_KEY` in `.env` | Verify `GEMINI_API_KEY` in `.env` and `PIXEL_IMAGE_PROVIDER=gemini` |
+| **Meta Graph API Token Expired** | Meta System User token invalidated | Update `META_SYSTEM_USER_TOKEN` in `.env` |
+| **Nginx 502 Bad Gateway** | PHP-FPM service stopped or sock path mismatch | Run `sudo systemctl status php8.4-fpm` and verify socket at `/run/php/php8.4-fpm.sock` |
+| **Class "ImageProvider" Not Found** | Missing composer autoload dump | Run `composer dump-autoload` in backend |
+| **Sanctum Token Unauthenticated 401** | Missing `Authorization: Bearer` header or expired token | Clear browser local storage & log in again |
 
 ---
 
