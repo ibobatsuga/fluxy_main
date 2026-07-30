@@ -222,7 +222,7 @@ class AdminController extends ApiController
             }
         }
 
-        $this->audit->write('limit_change', 'Kredensial platform diperbarui.', null, $request->user(), ['keys' => array_keys($validated)], $request);
+        $this->audit->write('credential_change', 'Kredensial platform diperbarui.', null, $request->user(), ['keys' => array_keys($validated)], $request);
 
         return $this->data($this->credentialPayload());
     }

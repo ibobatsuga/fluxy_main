@@ -38,6 +38,7 @@ class MayaController extends ApiController
     public function redirect(Request $request, string $provider): JsonResponse
     {
         abort_unless(in_array($provider, ['facebook', 'instagram', 'tiktok'], true), 404);
+        abort_unless(app()->environment(['local', 'testing']), 503, 'Koneksi akun mandiri belum dikonfigurasi. Hubungi Admin Fluxy untuk sinkronisasi akun Meta.');
         $frontend = rtrim(config('app.frontend_url'), '/');
 
         return $this->data(['url' => $frontend.'/maya/connect?mock_connect='.$provider]);
@@ -45,6 +46,7 @@ class MayaController extends ApiController
 
     public function confirm(Request $request): JsonResponse
     {
+        abort_unless(app()->environment(['local', 'testing']), 404);
         $validated = $request->validate(['provider' => ['required', 'in:facebook,instagram,tiktok']]);
         $provider = $validated['provider'];
         $account = SocialAccount::firstOrCreate(

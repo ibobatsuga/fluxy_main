@@ -38,6 +38,11 @@ api.interceptors.response.use(
   (error) => {
     const status = error.response?.status;
     const authStore = useAuthStore.getState();
+    const apiMessage = error.response?.data?.message;
+
+    if (typeof apiMessage === "string" && apiMessage.trim()) {
+      error.message = apiMessage;
+    }
 
     if (status === 401 && !isLoggingOut) {
       isLoggingOut = true;

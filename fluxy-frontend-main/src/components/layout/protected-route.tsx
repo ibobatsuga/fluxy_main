@@ -5,9 +5,14 @@ import { Loader2 } from "lucide-react";
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requireAdmin?: boolean;
+  requireTenant?: boolean;
 }
 
-export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRouteProps) {
+export function ProtectedRoute({
+  children,
+  requireAdmin = false,
+  requireTenant = false,
+}: ProtectedRouteProps) {
   const { isAuthenticated, isLoading, user } = useAuthStore();
 
   // Belum terautentikasi → redirect ke login
@@ -35,6 +40,10 @@ export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRout
 
   if (requireAdmin && !user.is_admin) {
     return <Navigate to="/dashboard" replace />;
+  }
+
+  if (requireTenant && !user.business_name) {
+    return <Navigate to={user.is_admin ? "/admin/tenants" : "/pending-approval"} replace />;
   }
 
   return <>{children}</>;

@@ -14,6 +14,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Services\UsageService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
@@ -30,13 +31,13 @@ class ModuleApiTest extends TestCase
 
         $this->postJson('/api/v1/ai/generate-image', [
             'content_type' => 'feed',
-            'input_type' => 'gdrive',
-            'gdrive_link' => 'https://drive.google.com/file/d/example',
+            'input_type' => 'upload',
+            'image_file' => UploadedFile::fake()->image('product.png'),
             'style' => 'Clean studio lighting',
         ])->assertStatus(202);
 
         $this->getJson('/api/v1/media')->assertOk()
-            ->assertJsonCount(1, 'data')
+            ->assertJsonCount(2, 'data')
             ->assertJsonPath('data.0.type', 'generated_image');
         $this->getJson('/api/v1/usage/summary')->assertJsonPath('data.pixel.used', 1);
     }
@@ -65,8 +66,8 @@ class ModuleApiTest extends TestCase
 
         $response = $this->postJson('/api/v1/ai/generate-image', [
             'content_type' => 'feed',
-            'input_type' => 'gdrive',
-            'gdrive_link' => 'https://drive.google.com/file/d/example',
+            'input_type' => 'upload',
+            'image_file' => UploadedFile::fake()->image('product.png'),
             'style' => 'Clean studio lighting',
         ])->assertStatus(202)
             ->assertJsonPath('data.type', 'generated_image');
@@ -75,6 +76,24 @@ class ModuleApiTest extends TestCase
         $this->assertSame('cloudflare', $asset->metadata['provider']);
         $this->assertSame('image/png', $asset->mime_type);
         Storage::disk('public')->assertExists($asset->path);
+    }
+
+    public function test_pixel_caption_uses_gemini_text_generation(): void
+    {
+        Http::fake([
+            'generativelanguage.googleapis.com/*' => Http::response([
+                'candidates' => [[
+                    'content' => ['parts' => [['text' => 'Produk baru sudah hadir! Belanja sekarang. #ProdukBaru']]],
+                ]],
+            ]),
+        ]);
+        config(['services.pixel.gemini.api_key' => 'test-gemini-key']);
+        [$user] = $this->activeUser('caption');
+        Sanctum::actingAs($user);
+
+        $this->postJson('/api/v1/ai/generate-caption', ['prompt' => 'Peluncuran produk baru'])
+            ->assertOk()
+            ->assertJsonPath('data.text', 'Produk baru sudah hadir! Belanja sekarang. #ProdukBaru');
     }
 
     public function test_maya_can_connect_and_publish_with_frontend_contract(): void
@@ -137,6 +156,34 @@ class ModuleApiTest extends TestCase
             'device_key' => 'phone-number-id', 'api_key' => 'secret-meta-token',
         ])->assertOk()->assertJsonPath('data.status', 'connected');
         $this->assertNotSame('secret-meta-token', KaiDevice::find($deviceId)->getRawOriginal('access_token'));
+    }
+
+    public function test_production_rejects_simulated_maya_and_kai_connections(): void
+    {
+        [$user] = $this->activeUser('production-guard');
+        Sanctum::actingAs($user);
+        $this->app['env'] = 'production';
+
+        $this->getJson('/api/v1/accounts/connect/instagram/redirect')->assertStatus(503);
+        $this->postJson('/api/v1/accounts/connect/confirm', ['provider' => 'instagram'])->assertNotFound();
+        $this->postJson('/api/v1/kai/device/qr/generate', [
+            'wa_number' => '628123456789',
+            'business_name' => 'Toko Production',
+        ])->assertStatus(503);
+    }
+
+    public function test_kai_gateway_webhook_requires_a_valid_signature(): void
+    {
+        config(['services.kai.gateway_webhook_secret' => 'gateway-test-secret']);
+        $json = json_encode(['session_id' => 'missing-session', 'event' => 'session.connected'], JSON_THROW_ON_ERROR);
+
+        $this->call('POST', '/api/v1/kai/gateway/webhook', [], [], [], [
+            'HTTP_X_FLUXY_SIGNATURE' => 'sha256=invalid',
+        ], $json)->assertForbidden();
+
+        $this->call('POST', '/api/v1/kai/gateway/webhook', [], [], [], [
+            'HTTP_X_FLUXY_SIGNATURE' => 'sha256='.hash_hmac('sha256', $json, 'gateway-test-secret'),
+        ], $json)->assertOk()->assertJsonPath('status', 'success');
     }
 
     public function test_echo_aggregates_persisted_metrics(): void

@@ -1,112 +1,97 @@
 #!/usr/bin/env bash
 
-# Automated ENV Injector & Code Updater for Fluxy VPS
-set -e
+# Safe production updater for the existing Fluxy VPS installation.
+set -Eeuo pipefail
 
-ENV_FILE="/var/www/fluxy/fluxy-backend/.env"
+APP_ROOT="/var/www/fluxy"
+BACKEND_ROOT="${APP_ROOT}/fluxy-backend"
+FRONTEND_ROOT="${APP_ROOT}/fluxy-frontend-main"
+ENV_FILE="${BACKEND_ROOT}/.env"
+DATABASE_FILE="${BACKEND_ROOT}/database/database.sqlite"
+BACKUP_ROOT="${APP_ROOT}/backups"
 
-echo "Updating Fluxy source code & configuration..."
+if [[ ! -f "${ENV_FILE}" ]]; then
+    echo "ERROR: ${ENV_FILE} is missing. Create it from fluxy-backend/.env.production.example first."
+    exit 1
+fi
 
-sudo git config --global --add safe.directory /var/www/fluxy || true
-git config --global --add safe.directory /var/www/fluxy || true
+if ! grep -Eq '^APP_KEY=base64:.+' "${ENV_FILE}"; then
+    echo "ERROR: APP_KEY is missing from ${ENV_FILE}."
+    exit 1
+fi
 
-cd /var/www/fluxy
-sudo git fetch origin main
-sudo git reset --hard origin/main
+echo "Updating Fluxy production safely..."
 
-META_TOKEN=$(echo "RUFBbTc3TVBjZWFCU05aQUFwRkc4WkN5UkhGMjY4SlJ4OXY0RW1wSk5ycVpBSGF1ejNWT3BqWkNDam44WkJybFdwTU9KVFpDdW1VUVpCQ3Z1SHJxWUJyM3M0eUJjVG05UFhaQlVScUFiMG5NTjhRWVhrQjZZVDN3TVQ3d2tuYWZidVpaQ2pCYndwQm9SaUVxN1c5cnVGZW04ckJ6MGtaQkUwV3FHSjBaQUowVFpCYWFMaHNIeWFPSnFZTw1HbjdaQWFyOVBOV1loZ1pEWkQ=" | base64 -d | tr -d '\r\n')
-GEMINI_KEY=$(echo "QVEuQWI4Uk42SUUyTmthbC1WUUxDREF3Zi1sNzcyaFFFS296bWlHa0VQN0VWMkFHVWt0Zw==" | base64 -d | tr -d '\r\n')
-GOOGLE_ID=$(echo "t92YuQnblRnbvNmclNXdlx2Zv92ZuMHcwFmLyNDZ00WaqpGd1FXZwJTZ4MjakJGMkhzYoxGbi9mautWL1YTM1EDO2AjN5gDN" | rev | base64 -d | tr -d '\r\n')
-GOOGLE_SEC=$(echo "=QDcZB3ShVnQxQXYhhWVK9WaNVHZwUGZVpFUQNWLYB1UD90R" | rev | base64 -d | tr -d '\r\n')
+sudo chown -R "$(id -un):$(id -gn)" "${APP_ROOT}"
+cd "${APP_ROOT}"
+git fetch --prune origin main
+git reset --hard origin/main
 
-cat << EOF | sudo tee $ENV_FILE > /dev/null
-APP_NAME=Fluxy
-APP_ENV=production
-APP_KEY=base64:4T4M7k8w9x0y1z2a3b4c5d6e7f8g9h0i1j2k3l4m5n6=
-APP_DEBUG=false
-APP_URL=https://app.fluxy.id
+cd "${BACKEND_ROOT}"
+composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction
 
-DB_CONNECTION=sqlite
-DB_DATABASE=/var/www/fluxy/fluxy-backend/database/database.sqlite
+if command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
+    cd "${FRONTEND_ROOT}"
+    npm ci --no-audit --no-fund
+    npm run build
+else
+    echo "ERROR: Node.js and npm are required to build the frontend."
+    exit 1
+fi
 
-META_GRAPH_URL=https://graph.facebook.com
-META_GRAPH_VERSION=v24.0
-META_APP_ID=2739900363078048
-META_APP_SECRET=d31d6808c851d7eb79bd77dc3754dcd7
-META_BUSINESS_ID=2825418767693278
-META_SYSTEM_USER_TOKEN=${META_TOKEN}
-META_WEBHOOK_VERIFY_TOKEN=fluxy_wh_7k2xQm9vR4pL
+sudo chown root:www-data "${ENV_FILE}"
+sudo chmod 640 "${ENV_FILE}"
 
-GEMINI_API_KEY=${GEMINI_KEY}
-GEMINI_MODEL=gemini-flash-latest
-PIXEL_IMAGE_PROVIDER=gemini
+sudo install -d -o www-data -g www-data -m 775 \
+    "${BACKEND_ROOT}/storage" \
+    "${BACKEND_ROOT}/bootstrap/cache" \
+    "${BACKEND_ROOT}/database"
 
-# Google OAuth Credentials
-GOOGLE_CLIENT_ID=${GOOGLE_ID}
-GOOGLE_CLIENT_SECRET=${GOOGLE_SEC}
-GOOGLE_REDIRECT_URI=https://app.fluxy.id/api/v1/auth/google/callback
-FRONTEND_URL=https://app.fluxy.id
-EOF
+sudo install -d -o root -g root -m 700 "${BACKUP_ROOT}"
+if [[ -f "${DATABASE_FILE}" ]]; then
+    sudo sqlite3 "${DATABASE_FILE}" ".backup '${BACKUP_ROOT}/database-$(date +%Y%m%d-%H%M%S).sqlite'"
+else
+    sudo install -o www-data -g www-data -m 664 /dev/null "${DATABASE_FILE}"
+fi
 
-sudo mkdir -p /var/www/fluxy/fluxy-backend/database /var/www/fluxy/fluxy-backend/storage/logs
-sudo touch /var/www/fluxy/fluxy-backend/database/database.sqlite
-sudo chown -R www-data:www-data /var/www/fluxy /var/www/fluxy/fluxy-backend/storage /var/www/fluxy/fluxy-backend/bootstrap/cache /var/www/fluxy/fluxy-backend/database
-sudo chmod -R 777 /var/www/fluxy/fluxy-backend/storage /var/www/fluxy/fluxy-backend/bootstrap/cache /var/www/fluxy/fluxy-backend/database
-sudo chown www-data:www-data $ENV_FILE
-sudo chmod 664 $ENV_FILE
-
-cd /var/www/fluxy/fluxy-backend
-sudo -u www-data php artisan config:clear || true
-sudo -u www-data php artisan cache:clear || true
-sudo -u www-data php artisan migrate --force || true
-sudo -u www-data php artisan db:seed --force || true
-sudo -u www-data php artisan storage:link || true
-sudo -u www-data php artisan tinker --execute="App\Models\User::where('email', 'ibobatsuga@gmail.com')->update(['is_admin' => true]); App\Models\Tenant::query()->update(['status' => 'active', 'approved_at' => now()]);" || true
-
-# Ensure Nginx & SSL Certbot for app.fluxy.id
-sudo apt-get update -y
-sudo apt-get install -y certbot python3-certbot-nginx || true
-sudo ufw allow 'Nginx Full' || true
-sudo ufw allow 443/tcp || true
-
-cat << 'EOF' | sudo tee /etc/nginx/sites-available/fluxy
-server {
-    listen 80;
-    listen [::]:80;
-    server_name app.fluxy.id fluxy.id;
-
-    root /var/www/fluxy/fluxy-backend/public;
-    index index.php index.html;
-
-    client_max_body_size 64M;
-
-    location / {
-        try_files $uri $uri/ /index.php?$query_string;
-    }
-
-    location ~ \.php$ {
-        include snippets/fastcgi-php.conf;
-        fastcgi_pass unix:/run/php/php8.4-fpm.sock;
-        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
-        include fastcgi_params;
-    }
-
-    location ~ /\.ht {
-        deny all;
-    }
+cd "${BACKEND_ROOT}"
+sudo -u www-data php artisan down --retry=30 || true
+restore_application() {
+    sudo -u www-data php artisan up >/dev/null 2>&1 || true
 }
-EOF
+trap restore_application EXIT
 
-sudo rm -f /etc/nginx/sites-enabled/default
-sudo ln -sf /etc/nginx/sites-available/fluxy /etc/nginx/sites-enabled/fluxy
+sudo -u www-data php artisan migrate --force
+sudo -u www-data php artisan storage:link 2>/dev/null || true
+sudo -u www-data php artisan optimize:clear
+sudo -u www-data php artisan config:cache
+sudo -u www-data php artisan route:cache
+sudo -u www-data php artisan view:cache
+
+sudo chown -R www-data:www-data \
+    "${BACKEND_ROOT}/storage" \
+    "${BACKEND_ROOT}/bootstrap/cache" \
+    "${BACKEND_ROOT}/database"
+sudo chmod -R u=rwX,g=rwX,o=rX \
+    "${BACKEND_ROOT}/storage" \
+    "${BACKEND_ROOT}/bootstrap/cache" \
+    "${BACKEND_ROOT}/database"
+sudo chown root:www-data "${ENV_FILE}"
+sudo chmod 640 "${ENV_FILE}"
+
+echo '* * * * * www-data cd /var/www/fluxy/fluxy-backend && /usr/bin/php artisan schedule:run >> /dev/null 2>&1' \
+    | sudo tee /etc/cron.d/fluxy-scheduler >/dev/null
+sudo chmod 644 /etc/cron.d/fluxy-scheduler
+sudo systemctl enable --now cron
+
 sudo nginx -t
-sudo systemctl restart nginx
-
-sudo certbot --nginx -d app.fluxy.id -m ibobatsuga@gmail.com --agree-tos --non-interactive || true
-sudo chown -R www-data:www-data /var/www/fluxy
-sudo chmod -R 775 /var/www/fluxy/fluxy-backend/storage /var/www/fluxy/fluxy-backend/bootstrap/cache /var/www/fluxy/fluxy-backend/database
+sudo systemctl reload php8.4-fpm
 sudo systemctl reload nginx
 
-echo "=========================================================="
-echo "✅ Code & Production .env updated 100% successfully!"
-echo "=========================================================="
+restore_application
+trap - EXIT
+
+curl --fail --silent --show-error --max-time 15 \
+    "https://app.fluxy.id/api/v1/health" >/dev/null
+
+echo "Fluxy production update completed successfully."

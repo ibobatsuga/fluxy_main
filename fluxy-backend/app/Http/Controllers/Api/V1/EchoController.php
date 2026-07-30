@@ -75,6 +75,7 @@ class EchoController extends ApiController
 
     public function export(Request $request): JsonResponse
     {
+        abort_unless(app()->environment(['local', 'testing']), 501, 'Ekspor PDF/XLSX belum tersedia di produksi.');
         $validated = $request->validate(['format' => ['required', 'in:pdf,xlsx']]);
 
         return $this->data([

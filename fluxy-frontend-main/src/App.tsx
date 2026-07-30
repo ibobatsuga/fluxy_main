@@ -100,7 +100,7 @@ export default function App() {
             {/* Protected Routes */}
             <Route
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requireTenant>
                   <AppLayout />
                 </ProtectedRoute>
               }

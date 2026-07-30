@@ -23,8 +23,12 @@ export function OAuthCallbackPage() {
       setToken(token);
       fetchUser()
         .then(() => {
+          const user = useAuthStore.getState().user;
+          if (!user) {
+            throw new Error("User profile was not loaded.");
+          }
           toast.success("Login berhasil!");
-          navigate("/dashboard");
+          navigate(user.is_admin && !user.business_name ? "/admin/tenants" : "/dashboard");
         })
         .catch(() => {
           toast.error("Gagal memuat data pengguna.");

@@ -37,7 +37,8 @@ export function LoginPage() {
     try {
       await login(data);
       toast.success("Login berhasil!");
-      navigate("/dashboard");
+      const user = useAuthStore.getState().user;
+      navigate(user?.is_admin && !user.business_name ? "/admin/tenants" : "/dashboard");
     } catch (error: unknown) {
       toast.error(getErrorMessage(error, "Login gagal. Periksa email dan password."));
     }

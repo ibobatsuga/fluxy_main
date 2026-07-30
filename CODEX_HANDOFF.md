@@ -1,6 +1,6 @@
 # 🚀 FLUXY (app.fluxy.id) — Comprehensive Technical Handoff & Architecture Blueprint for Codex
 
-Document Revision: 6.0 (Complete All-Inclusive Edition)  
+Document Revision: 7.0 (Production Hardening Baseline)
 Date: July 31, 2026  
 Project Name: **Fluxy — AI-Powered Workforce Platform for Businesses**  
 Production URL: `https://app.fluxy.id`  
@@ -21,10 +21,19 @@ Fluxy is a multi-tenant AI Employee SaaS platform designed to automate e-commerc
 5. **Admin**: Multi-tenant management, user verification/approval, resource quota limits, and global credential management.
 
 ### Technology Stack & Versions:
-- **Backend Framework**: Laravel 11 / 12 (PHP 8.4-FPM, SQLite 3 database, Laravel Sanctum for API tokens, Laravel Socialite for Google OAuth).
+- **Backend Framework**: Laravel 13 (PHP 8.4-FPM in production, SQLite 3 database, Laravel Sanctum for API tokens, Laravel Socialite for Google OAuth).
 - **Frontend Framework**: React 19 + Vite 8 + TypeScript + Tailwind CSS v4 + React Router v7 + Lucide React + Recharts + Zustand.
 - **Production Delivery**: The React SPA is built directly into Laravel's public folder (`fluxy-backend/public`), allowing Nginx to serve both the frontend SPA and the Laravel REST API on `https://app.fluxy.id`.
 - **Infrastructure**: Biznet Gio Cloud (NEO Lite Compute), Ubuntu 24.04 LTS, Nginx 1.24, Certbot Let's Encrypt SSL, UFW Firewall.
+
+### Current production-readiness truth
+
+- The public SPA, authentication API boundary, Meta webhook signature verification, frontend build, lint, and automated backend suite are healthy.
+- Pixel now uses a native Gemini image-generation model and passes uploaded/Google Drive reference images to the provider. Production must set `GEMINI_MODEL=gemini-3.1-flash-image` (or another verified image-capable model).
+- Meta asset sync and publishing services exist, but self-service Maya OAuth is not implemented. Production rejects the former `mock_connect` flow instead of creating fake connected accounts.
+- Kai supports Meta WhatsApp Cloud API messaging. WhatsApp Web QR pairing and WhatsApp group broadcast require a real external gateway; production disables the simulation paths.
+- Echo reads persisted metrics, but automated Meta insights ingestion and real PDF/XLSX export are still pending.
+- `GET /api/v1/health` checks database, writable storage, scheduler heartbeat, and integration configuration without exposing secrets.
 
 ---
 
@@ -44,9 +53,11 @@ Fluxy is a multi-tenant AI Employee SaaS platform designed to automate e-commerc
 - **DNS Record**: Type `A`, Host `app` ➔ Target IP `103.126.117.182`
 - **SSL Certificate**: Certbot Let's Encrypt active for `https://app.fluxy.id` (Registered under `ibobatsuga@gmail.com`).
 
-### 2.3 GitHub Push Protection Handling
-- GitHub enforces strict Secret Scanning Push Protection rules. Raw API keys or Client Secrets committed to git are automatically rejected.
-- **Solution in Repo**: Sensitive tokens inside `setup-env.sh` are stored as reversed/base64-encoded strings (e.g. `GOOGLE_ID=$(echo "..." | rev | base64 -d)`) and decoded dynamically during execution on the VPS.
+### 2.3 Secret Management and GitHub Push Protection
+- Encoding, reversing, or base64-wrapping a credential is not secret management and must never be used to bypass push protection.
+- `setup-env.sh` preserves the server-owned `.env`; it no longer embeds or rewrites production credentials.
+- Store production secrets only in `/var/www/fluxy/fluxy-backend/.env` (mode `640`, owner `root:www-data`) or a proper secret manager.
+- Credentials that appeared in earlier Git history must be considered compromised and rotated in Google, Gemini, and Meta consoles before the hardened deployment is treated as complete.
 
 ---
 
@@ -90,7 +101,7 @@ Fluxy is a multi-tenant AI Employee SaaS platform designed to automate e-commerc
 │   ├── database/
 │   │   ├── database.sqlite        # Active SQLite database file
 │   │   ├── migrations/            # Table migrations (users, tenants, plans, subscriptions, images, logs, Kai tables)
-│   │   └── seeders/               # DatabaseSeeder.php (Seeds admin@fluxy.local / ChangeMe123! & default plan)
+│   │   └── seeders/               # DatabaseSeeder.php (always seeds plan; users only when explicit production seed credentials exist)
 │   ├── public/                    # Production Build Destination for SPA Frontend
 │   │   ├── index.html             # Main Single Page Application entry HTML
 │   │   ├── assets/                # Compiled JavaScript bundles, CSS styles, & WebP image assets
@@ -200,17 +211,15 @@ All API routes are grouped under `/api/v1/`.
 
 1. **`GeminiImageProvider.php`** (`app/Services/Images/`):
    - Implements `ImageProvider` contract.
-   - Accepts multipart image upload or Google Drive URL.
-   - Converts image to base64 inline data array.
-   - Constructs visual prompt with strict aspect ratio instructions (`1:1`, `4:5`, `16:9`, `9:16`) and studio lighting styles.
-   - Calls Google Gemini API (`GEMINI_API_KEY`, model `gemini-flash-latest`).
-   - Saves output file to `storage/app/public/pixel/` and returns public URL `https://app.fluxy.id/storage/pixel/...`.
+   - Accepts uploaded or public Google Drive reference images and sends them as Gemini inline image data.
+   - Requests native image output with feed (`1:1`) or story (`9:16`) aspect ratio.
+   - Calls Google Gemini API using an image-capable model (currently `gemini-3.1-flash-image`).
+   - Validates returned PNG/JPEG/WebP bytes before storing the tenant-scoped output.
 
 2. **`WhatsAppQrGatewayService.php`** (`app/Services/Kai/`):
-   - Generates WhatsApp Web pairing session ID (`wa_qr_{tenant_id}_{rand}`).
-   - Constructs SVG QR code data URI payload (`2@...`).
-   - Sets 2-minute QR code expiration window (`qr_expires_at`).
-   - Auto-refreshes expired QR codes on status polling (`checkStatus()`).
+   - Contains the former QR simulation scaffold and webhook event mapping.
+   - It is not a real WhatsApp Web client by itself; production QR endpoints remain disabled unless a separately authenticated gateway is implemented.
+   - The simulation endpoint is restricted to local/testing environments.
 
 3. **`MetaService.php`** (`app/Services/Meta/`):
    - Handles Meta Graph API v24.0 integration.
@@ -240,16 +249,16 @@ All API routes are grouped under `/api/v1/`.
 | `DB_DATABASE` | Yes | `/var/www/...` | Absolute path to SQLite database file |
 | `META_GRAPH_URL` | Yes | `https://graph.facebook.com` | Meta Graph API base endpoint |
 | `META_GRAPH_VERSION` | Yes | `v24.0` | Meta Graph API version |
-| `META_APP_ID` | Yes | `2739900363078048` | Meta Developer App ID |
-| `META_APP_SECRET` | Yes | `d31d680...` | Meta Developer App Secret |
-| `META_BUSINESS_ID` | Yes | `28254187...` | Meta Business Account ID |
-| `META_SYSTEM_USER_TOKEN` | Yes | `EAAm77MP...` | Permanent Meta System User Token |
-| `META_WEBHOOK_VERIFY_TOKEN` | Yes | `fluxy_wh_7k2xQm9vR4pL` | Verification token for Meta webhooks |
-| `GEMINI_API_KEY` | Yes | `AQ.Ab8RN6...` | Google Gemini AI API key |
-| `GEMINI_MODEL` | Yes | `gemini-flash-latest` | Model identifier for product image design |
+| `META_APP_ID` | Yes | _(secret environment)_ | Meta Developer App ID |
+| `META_APP_SECRET` | Yes | _(secret environment)_ | Meta Developer App Secret |
+| `META_BUSINESS_ID` | Yes | _(secret environment)_ | Meta Business Account ID |
+| `META_SYSTEM_USER_TOKEN` | Yes | _(secret environment)_ | Permanent Meta System User Token |
+| `META_WEBHOOK_VERIFY_TOKEN` | Yes | _(secret environment)_ | Verification token for Meta webhooks |
+| `GEMINI_API_KEY` | Yes | _(secret environment)_ | Google Gemini AI API key |
+| `GEMINI_MODEL` | Yes | `gemini-3.1-flash-image` | Image-capable Gemini model identifier |
 | `PIXEL_IMAGE_PROVIDER` | Yes | `gemini` | Resolved image generation provider singleton |
-| `GOOGLE_CLIENT_ID` | Yes | `4896068...` | Google OAuth Client ID |
-| `GOOGLE_CLIENT_SECRET` | Yes | `GOCSPX-...` | Google OAuth Client Secret |
+| `GOOGLE_CLIENT_ID` | Yes | _(secret environment)_ | Google OAuth Client ID |
+| `GOOGLE_CLIENT_SECRET` | Yes | _(secret environment)_ | Google OAuth Client Secret |
 | `GOOGLE_REDIRECT_URI` | Yes | `https://app.fluxy.id/api/v1/auth/google/callback` | OAuth redirect URI registered in Google Console |
 | `FRONTEND_URL` | Yes | `https://app.fluxy.id` | Production frontend URL for CORS & redirects |
 
@@ -342,6 +351,7 @@ server {
 
 ## 11. Immediate Next Tasks for Codex
 
-1. **Module Inspection & Verification**: Test and verify all API endpoints for Maya (stories, calendar), Kai (chatbot, WA handover), Pixel (Gemini image generation), and Echo (analytics).
-2. **Webhooks Verification**: Confirm Meta webhook callback handler at `POST /api/v1/meta/webhook` verifies token `fluxy_wh_7k2xQm9vR4pL` cleanly.
-3. **Frontend UI Polish**: Ensure all forms, dialogs, and table pagination handle empty/error states gracefully.
+1. **Rotate leaked credentials before deployment**: Meta app secret/token, Gemini key, Google OAuth secret, webhook verify token, and (if reused) the Laravel app key.
+2. **Deploy the hardened baseline**: use `setup-env.sh`, verify `/api/v1/health`, confirm the scheduler heartbeat becomes `ok`, and smoke-test login plus Pixel with a small image.
+3. **Finish real integrations**: implement Meta self-service OAuth/asset assignment for Maya, Meta insights ingestion and real Echo files, plus a separately deployed authenticated WhatsApp Web gateway if QR/group broadcast remains a product requirement.
+4. **Remove legacy production seed accounts**: audit `admin@fluxy.local` and `demo@fluxy.local`; remove or rotate them if they exist on the VPS.

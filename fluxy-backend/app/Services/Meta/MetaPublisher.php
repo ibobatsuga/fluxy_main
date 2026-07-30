@@ -28,7 +28,14 @@ class MetaPublisher
                 throw new MetaApiException('Akun tujuan publikasi tidak aktif atau tidak ditemukan.');
             }
 
-            if (! in_array($account->provider, ['facebook', 'instagram'], true) || ! $account->access_token) {
+            if (! in_array($account->provider, ['facebook', 'instagram'], true)) {
+                throw new MetaApiException('Provider '.$account->provider.' belum didukung untuk publikasi produksi.');
+            }
+
+            if (! $account->access_token) {
+                if (! app()->environment(['local', 'testing'])) {
+                    throw new MetaApiException('Akun '.$account->provider.' belum memiliki access token yang valid.');
+                }
                 $results[$account->provider] = 'dev-'.Str::ulid();
 
                 continue;

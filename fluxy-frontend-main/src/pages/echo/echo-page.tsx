@@ -47,6 +47,10 @@ export function EchoPage() {
         onToChange={setTo}
         onExport={(fmtType) => exportReport.mutate({ format: fmtType, params })}
         isExporting={exportReport.isPending}
+        exportEnabled={
+          import.meta.env.VITE_ECHO_EXPORT_ENABLED === "true" ||
+          import.meta.env.VITE_USE_MOCK === "true"
+        }
       />
 
       {/* KPI Cards */}

@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\FluxyNotification;
 use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\Tenant;
@@ -18,16 +19,38 @@ class DatabaseSeeder extends Seeder
             ['name' => 'Fluxy Default', 'limits' => UsageService::DEFAULT_LIMITS, 'is_active' => true],
         );
 
-        User::firstOrCreate(
-            ['email' => env('SEED_ADMIN_EMAIL', 'admin@fluxy.local')],
-            [
-                'name' => 'Fluxy Admin',
-                'password' => env('SEED_ADMIN_PASSWORD', 'ChangeMe123!'),
-                'provider' => 'email',
-                'is_admin' => true,
-                'email_verified_at' => now(),
-            ],
-        );
+        $adminEmail = env('SEED_ADMIN_EMAIL');
+        $adminPassword = env('SEED_ADMIN_PASSWORD');
+        $tenantEmail = env('SEED_TENANT_EMAIL');
+        $tenantPassword = env('SEED_TENANT_PASSWORD');
+
+        if (! app()->environment('production')) {
+            $adminEmail ??= 'admin@fluxy.local';
+            $adminPassword ??= 'ChangeMe123!';
+            $tenantEmail ??= 'demo@fluxy.local';
+            $tenantPassword ??= 'Demo12345!';
+        }
+
+        if (! $adminEmail || ! $adminPassword) {
+            $this->command?->warn('Skipping admin seed: SEED_ADMIN_EMAIL and SEED_ADMIN_PASSWORD are not both configured.');
+        } else {
+            User::firstOrCreate(
+                ['email' => $adminEmail],
+                [
+                    'name' => 'Fluxy Admin',
+                    'password' => $adminPassword,
+                    'provider' => 'email',
+                    'is_admin' => true,
+                    'email_verified_at' => now(),
+                ],
+            );
+        }
+
+        if (! $tenantEmail || ! $tenantPassword) {
+            $this->command?->warn('Skipping demo tenant seed: SEED_TENANT_EMAIL and SEED_TENANT_PASSWORD are not both configured.');
+
+            return;
+        }
 
         $tenant = Tenant::firstOrCreate(
             ['slug' => 'toko-maju-jaya'],
@@ -42,10 +65,10 @@ class DatabaseSeeder extends Seeder
         );
 
         $user = User::firstOrCreate(
-            ['email' => env('SEED_TENANT_EMAIL', 'demo@fluxy.local')],
+            ['email' => $tenantEmail],
             [
                 'name' => 'Andi Wijaya',
-                'password' => env('SEED_TENANT_PASSWORD', 'Demo12345!'),
+                'password' => $tenantPassword,
                 'provider' => 'email',
                 'is_admin' => true,
                 'current_tenant_id' => $tenant->id,
@@ -63,7 +86,7 @@ class DatabaseSeeder extends Seeder
             ],
         );
 
-        \App\Models\FluxyNotification::firstOrCreate(
+        FluxyNotification::firstOrCreate(
             ['user_id' => $user->id, 'type' => 'kai_handover'],
             [
                 'title' => 'Perhatian Admin: Handover Kai WA',
@@ -73,7 +96,7 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        \App\Models\FluxyNotification::firstOrCreate(
+        FluxyNotification::firstOrCreate(
             ['user_id' => $user->id, 'type' => 'maya_failed'],
             [
                 'title' => 'Postingan Instagram Gagal',
@@ -84,4 +107,3 @@ class DatabaseSeeder extends Seeder
         );
     }
 }
-

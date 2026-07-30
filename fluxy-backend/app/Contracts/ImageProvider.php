@@ -8,5 +8,10 @@ interface ImageProvider
 {
     public function name(): string;
 
-    public function generate(string $prompt, string $contentType): GeneratedImage;
+    public function generate(
+        string $prompt,
+        string $contentType,
+        ?string $inputBytes = null,
+        ?string $inputMimeType = null,
+    ): GeneratedImage;
 }

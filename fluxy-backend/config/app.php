@@ -56,6 +56,11 @@ return [
 
     'frontend_url' => env('FRONTEND_URL', 'http://localhost:5173'),
 
+    'admin_emails' => array_values(array_filter(array_map(
+        static fn (string $email): string => strtolower(trim($email)),
+        explode(',', (string) env('FLUXY_ADMIN_EMAILS', '')),
+    ))),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone
@@ -67,7 +72,7 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    'timezone' => env('APP_TIMEZONE', 'UTC'),
 
     /*
     |--------------------------------------------------------------------------

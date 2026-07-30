@@ -26,7 +26,11 @@ interface DeviceStatusCardProps {
 }
 
 export function DeviceStatusCard({ device, isLoading }: DeviceStatusCardProps) {
-  const [connectMode, setConnectMode] = useState<"qr" | "cloud_api">("qr");
+  const qrGatewayEnabled = import.meta.env.VITE_KAI_QR_ENABLED === "true";
+  const qrSimulationEnabled = import.meta.env.VITE_KAI_QR_SIMULATION === "true";
+  const [connectMode, setConnectMode] = useState<"qr" | "cloud_api">(
+    qrGatewayEnabled ? "qr" : "cloud_api"
+  );
   const [waNumber, setWaNumber] = useState("");
   const [businessName, setBusinessName] = useState("");
   const [phoneNumberId, setPhoneNumberId] = useState("");
@@ -154,7 +158,7 @@ export function DeviceStatusCard({ device, isLoading }: DeviceStatusCardProps) {
               </div>
 
               <div className="pt-2 flex flex-wrap gap-2">
-                <Button
+                {qrSimulationEnabled && <Button
                   size="sm"
                   variant="default"
                   className="bg-teal-600 hover:bg-teal-700 text-white"
@@ -167,7 +171,7 @@ export function DeviceStatusCard({ device, isLoading }: DeviceStatusCardProps) {
                     <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
                   )}
                   Verifikasi / Konfirmasi Pindaian
-                </Button>
+                </Button>}
                 <Button
                   size="sm"
                   variant="outline"
@@ -201,7 +205,7 @@ export function DeviceStatusCard({ device, isLoading }: DeviceStatusCardProps) {
 
             {/* Selector Mode */}
             <div className="flex rounded-lg bg-muted p-1 gap-1 text-xs">
-              <button
+              {qrGatewayEnabled && <button
                 type="button"
                 className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-md font-medium transition-colors ${
                   connectMode === "qr"
@@ -212,7 +216,7 @@ export function DeviceStatusCard({ device, isLoading }: DeviceStatusCardProps) {
               >
                 <QrCode className="h-3.5 w-3.5" />
                 Scan QR Code (WhatsApp Web)
-              </button>
+              </button>}
               <button
                 type="button"
                 className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-md font-medium transition-colors ${

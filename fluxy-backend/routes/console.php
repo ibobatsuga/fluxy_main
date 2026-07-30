@@ -5,6 +5,7 @@ use App\Models\Post;
 use App\Services\Meta\MetaPublisher;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schedule;
 use Illuminate\Support\Str;
 
@@ -13,6 +14,8 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::call(function () {
+    Cache::put('health:scheduler:last_run', now()->toISOString(), now()->addMinutes(10));
+
     Post::where('status', 'scheduled')
         ->where('scheduled_at', '<=', now())
         ->chunkById(100, function ($posts) {
@@ -37,5 +40,8 @@ Schedule::call(function () {
 
     KaiBroadcast::where('status', 'scheduled')
         ->where('scheduled_at', '<=', now())
-        ->chunkById(100, fn ($items) => $items->each->update(['status' => 'sent', 'sent_at' => now()]));
+        ->chunkById(100, fn ($items) => $items->each->update([
+            'status' => 'failed',
+            'error_message' => 'Gateway pengiriman WhatsApp grup belum dikonfigurasi.',
+        ]));
 })->name('publish-due-content')->everyMinute()->withoutOverlapping();

@@ -5,6 +5,8 @@ namespace App\Services\Images;
 use App\Contracts\ImageProvider;
 use App\Data\GeneratedImage;
 use App\Exceptions\ImageGenerationException;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
 use Throwable;
 
@@ -12,8 +14,8 @@ class GeminiImageProvider implements ImageProvider
 {
     public function __construct(
         private readonly string $apiKey,
-        private readonly string $model = 'gemini-flash-latest',
-        private readonly int $timeout = 60,
+        private readonly string $model = 'gemini-3.1-flash-image',
+        private readonly int $timeout = 90,
     ) {}
 
     public function name(): string
@@ -21,10 +23,39 @@ class GeminiImageProvider implements ImageProvider
         return 'gemini';
     }
 
-    public function generate(string $prompt, string $contentType): GeneratedImage
-    {
+    public function generate(
+        string $prompt,
+        string $contentType,
+        ?string $inputBytes = null,
+        ?string $inputMimeType = null,
+    ): GeneratedImage {
         if ($this->apiKey === '') {
             throw new ImageGenerationException('Gemini API Key is not configured.');
+        }
+
+        if (($inputBytes === null) !== ($inputMimeType === null)) {
+            throw new ImageGenerationException('The reference image payload is incomplete.');
+        }
+
+        $parts = [[
+            'text' => implode(' ', [
+                'You are Pixel, an expert commercial product photographer and visual designer.',
+                'Create only the final image requested below.',
+                $inputBytes !== null
+                    ? 'Use the supplied reference image as the product identity; preserve its recognizable shape, branding, and key details.'
+                    : 'Create the product scene from the description.',
+                'Do not add watermarks or unrequested text.',
+                'Creative brief: '.$prompt,
+            ]),
+        ]];
+
+        if ($inputBytes !== null && $inputMimeType !== null) {
+            array_unshift($parts, [
+                'inlineData' => [
+                    'mimeType' => $inputMimeType,
+                    'data' => base64_encode($inputBytes),
+                ],
+            ]);
         }
 
         $endpoint = sprintf(
@@ -32,20 +63,26 @@ class GeminiImageProvider implements ImageProvider
             rawurlencode($this->model),
         );
 
-        $systemInstruction = 'You are Pixel, an expert AI visual designer. Generate a clean, modern, professional SVG graphic illustration suitable for commercial social media posts ('.$contentType.'). Return ONLY valid raw SVG code starting with <svg> and ending with </svg> without markdown code blocks, explanation or additional text.';
-
         try {
             $response = Http::asJson()
                 ->acceptJson()
                 ->withHeaders(['X-goog-api-key' => $this->apiKey])
                 ->connectTimeout(10)
                 ->timeout($this->timeout)
+                ->retry([0, 500, 1500], when: function (Throwable $exception): bool {
+                    if ($exception instanceof ConnectionException) {
+                        return true;
+                    }
+
+                    return $exception instanceof RequestException
+                        && ($exception->response->status() === 429 || $exception->response->serverError());
+                }, throw: false)
                 ->post($endpoint, [
-                    'contents' => [
-                        [
-                            'parts' => [
-                                ['text' => $systemInstruction."\n\nPrompt: ".$prompt],
-                            ],
+                    'contents' => [['parts' => $parts]],
+                    'generationConfig' => [
+                        'responseModalities' => ['IMAGE'],
+                        'imageConfig' => [
+                            'aspectRatio' => $contentType === 'story' ? '9:16' : '1:1',
                         ],
                     ],
                 ]);
@@ -54,53 +91,53 @@ class GeminiImageProvider implements ImageProvider
         }
 
         if ($response->failed()) {
-            throw new ImageGenerationException('Gemini API request failed with HTTP '.$response->status().'.');
+            $providerMessage = (string) $response->json('error.message', '');
+            $message = 'Gemini API request failed with HTTP '.$response->status().'.';
+            if ($providerMessage !== '') {
+                $message .= ' '.mb_strimwidth($providerMessage, 0, 300, '…');
+            }
+
+            throw new ImageGenerationException($message);
         }
 
-        $text = (string) $response->json('candidates.0.content.parts.0.text', '');
-        
-        // Extract SVG content if wrapped in backticks or markdown
-        if (preg_match('/<svg[\s\S]*?<\/svg>/i', $text, $matches)) {
-            $svgContent = $matches[0];
-        } else {
-            $svgContent = trim($text);
+        foreach ($response->json('candidates.0.content.parts', []) as $part) {
+            $inline = $part['inlineData'] ?? $part['inline_data'] ?? null;
+            if (! is_array($inline) || empty($inline['data'])) {
+                continue;
+            }
+
+            $bytes = base64_decode((string) $inline['data'], true);
+            if ($bytes === false || $bytes === '') {
+                continue;
+            }
+
+            [$mimeType, $extension] = $this->detectFormat(
+                $bytes,
+                (string) ($inline['mimeType'] ?? $inline['mime_type'] ?? ''),
+            );
+
+            return new GeneratedImage($bytes, $mimeType, $extension, [
+                'model' => $this->model,
+                'provider' => 'gemini',
+                'used_reference_image' => $inputBytes !== null,
+            ]);
         }
 
-        if ($svgContent === '' || ! str_contains($svgContent, '<svg')) {
-            // Fallback SVG generation if non-SVG text was returned
-            $svgContent = $this->buildFallbackSvg($prompt, $contentType);
-        }
-
-        $bytes = $svgContent;
-
-        return new GeneratedImage($bytes, 'image/svg+xml', 'svg', [
-            'model' => $this->model,
-            'provider' => 'gemini',
-            'prompt' => $prompt,
-        ]);
+        throw new ImageGenerationException('Gemini returned no generated image.');
     }
 
-    private function buildFallbackSvg(string $prompt, string $contentType): string
+    private function detectFormat(string $bytes, string $reportedMimeType): array
     {
-        $viewBox = $contentType === 'story' ? '0 0 1080 1920' : '0 0 1080 1080';
-        $width = $contentType === 'story' ? 1080 : 1080;
-        $height = $contentType === 'story' ? 1920 : 1080;
+        $detectedMimeType = (new \finfo(FILEINFO_MIME_TYPE))->buffer($bytes);
+        $mimeType = in_array($detectedMimeType, ['image/jpeg', 'image/png', 'image/webp'], true)
+            ? $detectedMimeType
+            : $reportedMimeType;
 
-        $safeTitle = htmlspecialchars(mb_strimwidth($prompt, 0, 60, '...'), ENT_QUOTES, 'UTF-8');
-
-        return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="'.$viewBox.'" width="'.$width.'" height="'.$height.'">'
-            .'<defs>'
-            .'<linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">'
-            .'<stop offset="0%" stop-color="#1e1b4b"/>'
-            .'<stop offset="50%" stop-color="#312e81"/>'
-            .'<stop offset="100%" stop-color="#4338ca"/>'
-            .'</linearGradient>'
-            .'</defs>'
-            .'<rect width="100%" height="100%" fill="url(#bg)"/>'
-            .'<circle cx="'.($width / 2).'" cy="'.($height / 2 - 100).'" r="200" fill="#6366f1" opacity="0.4"/>'
-            .'<circle cx="'.($width / 2 + 100).'" cy="'.($height / 2 + 50).'" r="150" fill="#a855f7" opacity="0.3"/>'
-            .'<text x="'.($width / 2).'" y="'.($height / 2).'" font-family="sans-serif" font-size="36" font-weight="bold" fill="#ffffff" text-anchor="middle">'.$safeTitle.'</text>'
-            .'<text x="'.($width / 2).'" y="'.($height / 2 + 60).'" font-family="sans-serif" font-size="20" fill="#cbd5e1" text-anchor="middle">Generated by Fluxy Pixel AI (Gemini)</text>'
-            .'</svg>';
+        return match ($mimeType) {
+            'image/jpeg' => ['image/jpeg', 'jpg'],
+            'image/png' => ['image/png', 'png'],
+            'image/webp' => ['image/webp', 'webp'],
+            default => throw new ImageGenerationException('Gemini returned an unsupported image format.'),
+        };
     }
 }

@@ -19,7 +19,8 @@ return [
         'provider' => env('PIXEL_IMAGE_PROVIDER', 'gemini'),
         'gemini' => [
             'api_key' => env('GEMINI_API_KEY', ''),
-            'model' => env('GEMINI_MODEL', 'gemini-flash-latest'),
+            'model' => env('GEMINI_MODEL', 'gemini-3.1-flash-image'),
+            'text_model' => env('GEMINI_TEXT_MODEL', 'gemini-2.5-flash'),
         ],
         'cloudflare' => [
             'account_id' => env('CLOUDFLARE_ACCOUNT_ID', ''),
@@ -28,6 +29,11 @@ return [
             'steps' => (int) env('CLOUDFLARE_IMAGE_STEPS', 4),
             'timeout' => (int) env('CLOUDFLARE_AI_TIMEOUT', 90),
         ],
+    ],
+
+    'kai' => [
+        'qr_gateway_enabled' => filter_var(env('KAI_QR_GATEWAY_ENABLED', false), FILTER_VALIDATE_BOOL),
+        'gateway_webhook_secret' => env('KAI_GATEWAY_WEBHOOK_SECRET', ''),
     ],
 
     'google' => [

@@ -7,6 +7,8 @@ use App\Exceptions\ImageGenerationException;
 use App\Models\Content;
 use App\Models\ImageGeneration;
 use App\Models\MediaAsset;
+use App\Services\Images\GeminiCaptionService;
+use App\Services\Images\GoogleDriveImageFetcher;
 use App\Services\UsageService;
 use App\Support\ModulePresenter;
 use Illuminate\Http\JsonResponse;
@@ -49,8 +51,12 @@ class PixelController extends ApiController
         return $this->message('Media deleted.');
     }
 
-    public function generate(Request $request, UsageService $usage, ImageProvider $provider): JsonResponse
-    {
+    public function generate(
+        Request $request,
+        UsageService $usage,
+        ImageProvider $provider,
+        GoogleDriveImageFetcher $driveFetcher,
+    ): JsonResponse {
         $validated = $request->validate([
             'content_type' => ['required', 'in:feed,story'],
             'input_type' => ['required', 'in:upload,gdrive'],
@@ -77,13 +83,39 @@ class PixelController extends ApiController
         $usage->assertAvailable($tenant, 'pixel');
 
         $input = null;
+        $inputBytes = null;
+        $inputMimeType = null;
         if ($request->hasFile('image_file')) {
             $file = $request->file('image_file');
+            $inputBytes = file_get_contents($file->getRealPath());
+            $inputMimeType = (string) $file->getMimeType();
+            if ($inputBytes === false) {
+                throw new ImageGenerationException('Uploaded image could not be read.');
+            }
             $path = $file->store('tenants/'.$tenant->id.'/pixel/input', 'public');
             $input = MediaAsset::create([
                 'tenant_id' => $tenant->id, 'user_id' => $request->user()->id,
                 'type' => 'image', 'disk' => 'public', 'path' => $path,
                 'mime_type' => $file->getMimeType(), 'size' => $file->getSize(),
+            ]);
+        } elseif (! empty($validated['gdrive_link'])) {
+            try {
+                $downloaded = $driveFetcher->fetch($validated['gdrive_link']);
+            } catch (ImageGenerationException $exception) {
+                return response()->json([
+                    'message' => $exception->getMessage(),
+                    'error' => 'reference_image_unavailable',
+                ], 422);
+            }
+            $inputBytes = $downloaded['bytes'];
+            $inputMimeType = $downloaded['mimeType'];
+            $path = 'tenants/'.$tenant->id.'/pixel/input/'.Str::ulid().'.'.$downloaded['extension'];
+            Storage::disk('public')->put($path, $inputBytes);
+            $input = MediaAsset::create([
+                'tenant_id' => $tenant->id, 'user_id' => $request->user()->id,
+                'type' => 'image', 'disk' => 'public', 'path' => $path,
+                'mime_type' => $inputMimeType, 'size' => strlen($inputBytes),
+                'metadata' => ['source' => 'google_drive'],
             ]);
         }
 
@@ -97,7 +129,7 @@ class PixelController extends ApiController
         ]);
 
         try {
-            $image = $provider->generate($prompt, $validated['content_type']);
+            $image = $provider->generate($prompt, $validated['content_type'], $inputBytes, $inputMimeType);
             $outputPath = 'tenants/'.$tenant->id.'/pixel/generated/'.$generation->id.'.'.$image->extension;
 
             if (! Storage::disk('public')->put($outputPath, $image->bytes)) {
@@ -136,11 +168,20 @@ class PixelController extends ApiController
         ], 202);
     }
 
-    public function caption(Request $request): JsonResponse
+    public function caption(Request $request, GeminiCaptionService $captionService): JsonResponse
     {
         $validated = $request->validate(['prompt' => ['required', 'string', 'max:4000']]);
 
-        return $this->data(['text' => '✨ '.$validated['prompt'].' #FluxyAI #BisnisMaju']);
+        try {
+            return $this->data(['text' => $captionService->generate($validated['prompt'])]);
+        } catch (ImageGenerationException $exception) {
+            Log::warning('Pixel caption generation failed.', ['exception' => $exception::class]);
+
+            return response()->json([
+                'message' => 'Caption AI belum berhasil dibuat. Silakan coba kembali.',
+                'error' => 'caption_generation_failed',
+            ], 502);
+        }
     }
 
     public function contents(Request $request): JsonResponse

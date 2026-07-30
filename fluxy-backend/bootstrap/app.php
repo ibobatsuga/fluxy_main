@@ -3,6 +3,7 @@
 use App\Http\Middleware\EnsureActiveSubscription;
 use App\Http\Middleware\EnsureAdmin;
 use App\Http\Middleware\EnsureApprovedTenant;
+use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -16,7 +17,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->trustProxies(at: '*');
+        $trustedProxies = array_values(array_filter(array_map(
+            'trim',
+            explode(',', (string) env('TRUSTED_PROXIES', '127.0.0.1,::1')),
+        )));
+        $middleware->trustProxies(at: $trustedProxies);
+        $middleware->append(SecurityHeaders::class);
         $middleware->alias([
             'admin' => EnsureAdmin::class,
             'approved' => EnsureApprovedTenant::class,

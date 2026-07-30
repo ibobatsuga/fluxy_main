@@ -29,6 +29,7 @@ class KaiController extends ApiController
 
     public function generateQr(Request $request, WhatsAppQrGatewayService $qrService): JsonResponse
     {
+        abort_unless(config('services.kai.qr_gateway_enabled'), 503, 'Koneksi WhatsApp via QR belum dikonfigurasi. Gunakan Meta Cloud API.');
         $validated = $request->validate([
             'wa_number' => ['required', 'regex:/^[0-9]{8,20}$/'],
             'business_name' => ['required', 'string', 'max:160'],
@@ -42,6 +43,7 @@ class KaiController extends ApiController
 
     public function qrStatus(Request $request, WhatsAppQrGatewayService $qrService): JsonResponse
     {
+        abort_unless(config('services.kai.qr_gateway_enabled'), 503, 'Koneksi WhatsApp via QR belum dikonfigurasi.');
         $tenant = $request->user()->currentTenant;
         $device = $qrService->checkStatus($tenant);
 
@@ -50,6 +52,7 @@ class KaiController extends ApiController
 
     public function simulateScan(Request $request, WhatsAppQrGatewayService $qrService): JsonResponse
     {
+        abort_unless(app()->environment(['local', 'testing']), 404);
         $tenant = $request->user()->currentTenant;
         $device = $qrService->simulateScan($tenant);
 
@@ -66,6 +69,11 @@ class KaiController extends ApiController
 
     public function gatewayWebhook(Request $request, WhatsAppQrGatewayService $qrService): JsonResponse
     {
+        $secret = (string) config('services.kai.gateway_webhook_secret');
+        abort_if($secret === '', 503, 'Kai gateway webhook secret belum dikonfigurasi.');
+        $provided = (string) $request->header('X-Fluxy-Signature', '');
+        $expected = 'sha256='.hash_hmac('sha256', $request->getContent(), $secret);
+        abort_unless($provided !== '' && hash_equals($expected, $provided), 403);
         $qrService->handleGatewayWebhook($request->all());
 
         return response()->json(['status' => 'success']);
@@ -125,6 +133,7 @@ class KaiController extends ApiController
 
     public function createBroadcast(Request $request, UsageService $usage): JsonResponse
     {
+        abort_unless(app()->environment(['local', 'testing']), 501, 'Pengiriman broadcast belum tersedia sampai gateway WhatsApp grup dikonfigurasi.');
         $validated = $request->validate([
             'group_ids' => ['required', 'array', 'min:1', 'max:100'], 'group_ids.*' => ['string'],
             'message' => ['required', 'string', 'max:4096'], 'image_url' => ['nullable', 'url'],
@@ -161,6 +170,7 @@ class KaiController extends ApiController
 
     public function retryBroadcast(Request $request, KaiBroadcast $broadcast): JsonResponse
     {
+        abort_unless(app()->environment(['local', 'testing']), 501, 'Pengiriman broadcast belum tersedia sampai gateway WhatsApp grup dikonfigurasi.');
         $this->authorizeBroadcast($request, $broadcast);
         abort_unless($broadcast->status === 'failed', 409, 'Only failed broadcasts can be retried.');
         $broadcast->update(['status' => 'sent', 'sent_at' => now(), 'error_message' => null]);

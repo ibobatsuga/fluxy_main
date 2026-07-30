@@ -141,7 +141,7 @@ function SidebarNav({ isCollapsed }: SidebarNavProps) {
   return (
     <>
       <nav className="flex-1 space-y-1 p-2">
-        {navItems.map(renderNavItem)}
+        {user?.business_name && navItems.map(renderNavItem)}
       </nav>
 
       <div className="px-4">

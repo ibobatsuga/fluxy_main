@@ -58,6 +58,9 @@ const providerColors: Record<string, string> = {
 };
 
 export function MayaConnectPage() {
+  const selfServiceConnectEnabled =
+    import.meta.env.VITE_MAYA_SELF_SERVICE_CONNECT === "true" ||
+    import.meta.env.VITE_USE_MOCK === "true";
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: accounts = [], isLoading } = useMayaAccounts();
   const connectAccount = useConnectAccount();
@@ -206,14 +209,16 @@ export function MayaConnectPage() {
                         size="sm"
                         className="mt-3"
                         onClick={() => connectAccount.mutate(platform.id)}
-                        disabled={isConnecting}
+                        disabled={isConnecting || !selfServiceConnectEnabled}
                       >
                         {isConnecting ? (
                           <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                         ) : (
                           <PlatformIcon className="mr-1.5 h-3.5 w-3.5" />
                         )}
-                        Hubungkan {platform.label}
+                        {selfServiceConnectEnabled
+                          ? `Hubungkan ${platform.label}`
+                          : "Hubungi Admin Fluxy"}
                       </Button>
                     )}
                   </div>

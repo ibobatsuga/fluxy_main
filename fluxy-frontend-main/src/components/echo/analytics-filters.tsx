@@ -21,6 +21,7 @@ interface AnalyticsFiltersProps {
   onToChange: (value: string) => void;
   onExport: (format: "pdf" | "xlsx") => void;
   isExporting?: boolean;
+  exportEnabled?: boolean;
 }
 
 export function AnalyticsFilters({
@@ -32,6 +33,7 @@ export function AnalyticsFilters({
   onToChange,
   onExport,
   isExporting,
+  exportEnabled = false,
 }: AnalyticsFiltersProps) {
   return (
     <div className="flex flex-col gap-4 rounded-xl border bg-card p-4 sm:flex-row sm:items-end sm:justify-between">
@@ -89,7 +91,7 @@ export function AnalyticsFilters({
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      {exportEnabled && <div className="flex items-center gap-2">
         <Button
           variant="outline"
           size="sm"
@@ -108,7 +110,7 @@ export function AnalyticsFilters({
           <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5" />
           Excel
         </Button>
-      </div>
+      </div>}
     </div>
   );
 }

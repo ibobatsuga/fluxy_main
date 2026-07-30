@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\AdminController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\EchoController;
+use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\KaiAdminController;
 use App\Http\Controllers\Api\V1\KaiController;
 use App\Http\Controllers\Api\V1\MayaController;
@@ -15,6 +16,7 @@ use App\Http\Controllers\Api\V1\UsageController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
+    Route::get('health', HealthController::class)->middleware('throttle:60,1');
     Route::get('meta/webhook', [MetaWebhookController::class, 'verify'])->middleware('throttle:60,1');
     Route::post('meta/webhook', [MetaWebhookController::class, 'receive'])->middleware('throttle:300,1');
     Route::post('kai/gateway/webhook', [KaiController::class, 'gatewayWebhook'])->middleware('throttle:300,1');
