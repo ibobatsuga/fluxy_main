@@ -1,0 +1,23 @@
+# Root gitignore for fluxy-main
+.DS_Store
+Thumbs.db
+*.log
+
+# Backend
+fluxy-backend/.env
+fluxy-backend/vendor/
+fluxy-backend/node_modules/
+fluxy-backend/public/storage
+fluxy-backend/storage/*.key
+fluxy-backend/storage/logs/*.log
+fluxy-backend/storage/framework/cache/data/*
+fluxy-backend/storage/framework/sessions/*
+fluxy-backend/storage/framework/views/*
+fluxy-backend/bootstrap/cache/*
+fluxy-backend/.phpunit.result.cache
+
+# Frontend
+fluxy-frontend-main/node_modules/
+fluxy-frontend-main/dist/
+fluxy-frontend-main/.env.local
+fluxy-frontend-main/.env.*.local
