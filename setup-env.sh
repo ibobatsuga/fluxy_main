@@ -20,6 +20,40 @@ if ! grep -Eq '^APP_KEY=base64:.+' "${ENV_FILE}"; then
     exit 1
 fi
 
+for required_command in composer node npm sqlite3; do
+    if ! command -v "${required_command}" >/dev/null 2>&1; then
+        echo "ERROR: ${required_command} is required before deployment starts."
+        exit 1
+    fi
+done
+
+restore_runtime_permissions() {
+    sudo install -d -o www-data -g www-data -m 775 \
+        "${BACKEND_ROOT}/storage" \
+        "${BACKEND_ROOT}/bootstrap/cache" \
+        "${BACKEND_ROOT}/database"
+    sudo chown -R www-data:www-data \
+        "${BACKEND_ROOT}/storage" \
+        "${BACKEND_ROOT}/bootstrap/cache" \
+        "${BACKEND_ROOT}/database"
+    sudo chmod -R u=rwX,g=rwX,o=rX \
+        "${BACKEND_ROOT}/storage" \
+        "${BACKEND_ROOT}/bootstrap/cache" \
+        "${BACKEND_ROOT}/database"
+    sudo chown root:www-data "${ENV_FILE}"
+    sudo chmod 640 "${ENV_FILE}"
+}
+
+restore_application() {
+    restore_runtime_permissions
+    if [[ -f "${BACKEND_ROOT}/artisan" && -d "${BACKEND_ROOT}/vendor" ]]; then
+        cd "${BACKEND_ROOT}"
+        sudo -u www-data php artisan up >/dev/null 2>&1 || true
+    fi
+}
+
+trap restore_application EXIT
+
 echo "Updating Fluxy production safely..."
 
 sudo chown -R "$(id -un):$(id -gn)" "${APP_ROOT}"
@@ -39,13 +73,7 @@ else
     exit 1
 fi
 
-sudo chown root:www-data "${ENV_FILE}"
-sudo chmod 640 "${ENV_FILE}"
-
-sudo install -d -o www-data -g www-data -m 775 \
-    "${BACKEND_ROOT}/storage" \
-    "${BACKEND_ROOT}/bootstrap/cache" \
-    "${BACKEND_ROOT}/database"
+restore_runtime_permissions
 
 sudo install -d -o root -g root -m 700 "${BACKUP_ROOT}"
 if [[ -f "${DATABASE_FILE}" ]]; then
@@ -56,10 +84,6 @@ fi
 
 cd "${BACKEND_ROOT}"
 sudo -u www-data php artisan down --retry=30 || true
-restore_application() {
-    sudo -u www-data php artisan up >/dev/null 2>&1 || true
-}
-trap restore_application EXIT
 
 sudo -u www-data php artisan migrate --force
 sudo -u www-data php artisan storage:link 2>/dev/null || true
@@ -68,16 +92,7 @@ sudo -u www-data php artisan config:cache
 sudo -u www-data php artisan route:cache
 sudo -u www-data php artisan view:cache
 
-sudo chown -R www-data:www-data \
-    "${BACKEND_ROOT}/storage" \
-    "${BACKEND_ROOT}/bootstrap/cache" \
-    "${BACKEND_ROOT}/database"
-sudo chmod -R u=rwX,g=rwX,o=rX \
-    "${BACKEND_ROOT}/storage" \
-    "${BACKEND_ROOT}/bootstrap/cache" \
-    "${BACKEND_ROOT}/database"
-sudo chown root:www-data "${ENV_FILE}"
-sudo chmod 640 "${ENV_FILE}"
+restore_runtime_permissions
 
 echo '* * * * * www-data cd /var/www/fluxy/fluxy-backend && /usr/bin/php artisan schedule:run >> /dev/null 2>&1' \
     | sudo tee /etc/cron.d/fluxy-scheduler >/dev/null
