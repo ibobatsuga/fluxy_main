@@ -23,4 +23,8 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    outDir: "../fluxy-backend/public",
+    emptyOutDir: false,
+  },
 });
