@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Contracts\ImageProvider;
 use App\Models\Content;
 use App\Models\ContentMetric;
+use App\Models\ImageGeneration;
 use App\Models\KaiDevice;
 use App\Models\MediaAsset;
 use App\Models\Plan;
@@ -76,6 +77,33 @@ class ModuleApiTest extends TestCase
         $this->assertSame('cloudflare', $asset->metadata['provider']);
         $this->assertSame('image/png', $asset->mime_type);
         Storage::disk('public')->assertExists($asset->path);
+    }
+
+    public function test_pixel_generation_is_idempotent_before_provider_work_starts(): void
+    {
+        [$user] = $this->activeUser('idempotent-pixel');
+        Sanctum::actingAs($user);
+        $headers = ['Idempotency-Key' => 'pixel-request-001'];
+
+        $this->postJson('/api/v1/ai/generate-image', [
+            'content_type' => 'feed',
+            'input_type' => 'upload',
+            'image_file' => UploadedFile::fake()->image('product-a.png'),
+            'style' => 'Clean studio lighting',
+        ], $headers)->assertStatus(202);
+
+        $this->postJson('/api/v1/ai/generate-image', [
+            'content_type' => 'feed',
+            'input_type' => 'upload',
+            'image_file' => UploadedFile::fake()->image('product-b.png'),
+            'style' => 'Clean studio lighting',
+        ], $headers)->assertStatus(202)
+            ->assertJsonPath('message', 'Image generation request was already received.')
+            ->assertJsonPath('status', 'completed');
+
+        $this->assertSame(1, ImageGeneration::query()->count());
+        $this->assertSame(2, MediaAsset::query()->count());
+        $this->getJson('/api/v1/usage/summary')->assertJsonPath('data.pixel.used', 1);
     }
 
     public function test_pixel_caption_uses_gemini_text_generation(): void

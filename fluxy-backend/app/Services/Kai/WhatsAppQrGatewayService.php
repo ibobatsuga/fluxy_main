@@ -8,7 +8,6 @@ use App\Models\KaiDevice;
 use App\Models\KaiLog;
 use App\Models\Tenant;
 use App\Models\User;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 class WhatsAppQrGatewayService
@@ -17,7 +16,7 @@ class WhatsAppQrGatewayService
     {
         $cleanWaNumber = preg_replace('/\D+/', '', $waNumber);
         $sessionId = 'wa_qr_'.$tenant->id.'_'.Str::lower(Str::random(8));
-        
+
         // Generate valid SVG QR representation for WhatsApp Web pairing
         $qrPayload = '2@'.Str::random(32).','.Str::random(32).','.$sessionId;
         $qrSvg = $this->buildQrDataUri($qrPayload);
@@ -122,11 +121,13 @@ class WhatsAppQrGatewayService
                 'connected_at' => now(),
                 'qr_code' => null,
             ]);
+
             return;
         }
 
         if ($event === 'session.disconnected') {
             $device->update(['status' => 'disconnected', 'connected_at' => null]);
+
             return;
         }
 
@@ -171,7 +172,7 @@ class WhatsAppQrGatewayService
         // Generates an inline Data URI SVG for WhatsApp Web pairing display
         $encoded = htmlspecialchars($payload, ENT_QUOTES, 'UTF-8');
         $hash = substr(md5($payload), 0, 16);
-        
+
         $svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240">'
             .'<rect width="240" height="240" fill="#ffffff" rx="12"/>'
             .'<rect x="20" y="20" width="60" height="60" fill="#0f172a" rx="8"/>'

@@ -8,7 +8,6 @@ BACKEND_ROOT="${APP_ROOT}/fluxy-backend"
 FRONTEND_ROOT="${APP_ROOT}/fluxy-frontend-main"
 ENV_FILE="${BACKEND_ROOT}/.env"
 DATABASE_FILE="${BACKEND_ROOT}/database/database.sqlite"
-BACKUP_ROOT="${APP_ROOT}/backups"
 
 if [[ ! -f "${ENV_FILE}" ]]; then
     echo "ERROR: ${ENV_FILE} is missing. Create it from fluxy-backend/.env.production.example first."
@@ -75,9 +74,8 @@ fi
 
 restore_runtime_permissions
 
-sudo install -d -o root -g root -m 700 "${BACKUP_ROOT}"
 if [[ -f "${DATABASE_FILE}" ]]; then
-    sudo sqlite3 "${DATABASE_FILE}" ".backup '${BACKUP_ROOT}/database-$(date +%Y%m%d-%H%M%S).sqlite'"
+    sudo "${APP_ROOT}/backup-db.sh"
 else
     sudo install -o www-data -g www-data -m 664 /dev/null "${DATABASE_FILE}"
 fi
@@ -86,6 +84,7 @@ cd "${BACKEND_ROOT}"
 sudo -u www-data php artisan down --retry=30 || true
 
 sudo -u www-data php artisan migrate --force
+sudo -u www-data sqlite3 -cmd '.timeout 10000' "${DATABASE_FILE}" 'PRAGMA journal_mode=WAL;' >/dev/null
 sudo -u www-data php artisan storage:link 2>/dev/null || true
 sudo -u www-data php artisan optimize:clear
 sudo -u www-data php artisan config:cache
@@ -97,6 +96,9 @@ restore_runtime_permissions
 echo '* * * * * www-data cd /var/www/fluxy/fluxy-backend && /usr/bin/php artisan schedule:run >> /dev/null 2>&1' \
     | sudo tee /etc/cron.d/fluxy-scheduler >/dev/null
 sudo chmod 644 /etc/cron.d/fluxy-scheduler
+echo '30 2 * * * root /var/www/fluxy/backup-db.sh >> /var/log/fluxy-backup.log 2>&1' \
+    | sudo tee /etc/cron.d/fluxy-backup >/dev/null
+sudo chmod 644 /etc/cron.d/fluxy-backup
 sudo systemctl enable --now cron
 
 sudo nginx -t

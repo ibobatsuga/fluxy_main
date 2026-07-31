@@ -3,6 +3,8 @@
 Thumbs.db
 *.log
 backups/
+*.pem
+*.key
 
 # Backend
 fluxy-backend/.env

@@ -87,7 +87,7 @@ export function RegisterPage() {
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Nama Lengkap</Label>
-                <Input id="name" placeholder="John Doe" {...register("name")} />
+                <Input id="name" autoComplete="name" placeholder="John Doe" {...register("name")} />
                 {errors.name && (
                   <p className="text-xs text-destructive">{errors.name.message}</p>
                 )}
@@ -97,6 +97,7 @@ export function RegisterPage() {
                 <Label htmlFor="business_name">Nama Bisnis</Label>
                 <Input
                   id="business_name"
+                  autoComplete="organization"
                   placeholder="Toko Maju Jaya"
                   {...register("business_name")}
                 />
@@ -131,6 +132,7 @@ export function RegisterPage() {
                 <Input
                   id="email"
                   type="email"
+                  autoComplete="email"
                   placeholder="nama@bisnis.com"
                   {...register("email")}
                 />
@@ -145,6 +147,7 @@ export function RegisterPage() {
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
+                    autoComplete="new-password"
                     placeholder="Minimal 8 karakter"
                     {...register("password")}
                   />
@@ -172,6 +175,7 @@ export function RegisterPage() {
                 <Input
                   id="password_confirmation"
                   type="password"
+                  autoComplete="new-password"
                   placeholder="Ulangi password"
                   {...register("password_confirmation")}
                 />

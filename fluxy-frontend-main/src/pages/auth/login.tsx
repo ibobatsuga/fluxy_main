@@ -60,6 +60,7 @@ export function LoginPage() {
                 <Input
                   id="email"
                   type="email"
+                  autoComplete="email"
                   placeholder="nama@bisnis.com"
                   {...register("email")}
                 />
@@ -74,6 +75,7 @@ export function LoginPage() {
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
                     placeholder="Masukkan password"
                     {...register("password")}
                   />

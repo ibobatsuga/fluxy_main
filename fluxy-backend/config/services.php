@@ -42,6 +42,10 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URI', env('APP_URL').'/api/v1/auth/google/callback'),
     ],
 
+    'health' => [
+        'integration_probe_ttl' => (int) env('INTEGRATION_HEALTH_TTL', 300),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Third Party Services

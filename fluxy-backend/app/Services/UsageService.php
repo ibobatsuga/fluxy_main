@@ -51,6 +51,8 @@ class UsageService
         array $metadata = [],
     ): UsageEvent {
         return DB::transaction(function () use ($tenant, $employee, $action, $quantity, $idempotencyKey, $metadata) {
+            Tenant::query()->whereKey($tenant->id)->lockForUpdate()->firstOrFail();
+
             if ($idempotencyKey) {
                 $existing = UsageEvent::where('tenant_id', $tenant->id)
                     ->where('idempotency_key', $idempotencyKey)

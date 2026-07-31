@@ -102,8 +102,9 @@ server {
     server_name app.fluxy.id;
 
     root /var/www/fluxy/fluxy-backend/public;
-    index index.php index.html;
+    index index.html;
     client_max_body_size 64M;
+    server_tokens off;
 
     gzip on;
     gzip_types text/plain text/css application/json application/javascript image/svg+xml;
@@ -114,8 +115,20 @@ server {
         add_header Cache-Control "public, immutable";
     }
 
+    location = /index.html {
+        add_header Cache-Control "no-cache";
+    }
+
+    location ^~ /api/ {
+        try_files $uri /index.php?$query_string;
+    }
+
+    location = /up {
+        try_files $uri /index.php?$query_string;
+    }
+
     location / {
-        try_files $uri $uri/ /index.php?$query_string;
+        try_files $uri $uri/ /index.html;
     }
 
     location ~ \.php$ {
@@ -134,6 +147,9 @@ NGINX
 echo '* * * * * www-data cd /var/www/fluxy/fluxy-backend && /usr/bin/php artisan schedule:run >> /dev/null 2>&1' \
     | sudo tee /etc/cron.d/fluxy-scheduler >/dev/null
 sudo chmod 644 /etc/cron.d/fluxy-scheduler
+echo '30 2 * * * root /var/www/fluxy/backup-db.sh >> /var/log/fluxy-backup.log 2>&1' \
+    | sudo tee /etc/cron.d/fluxy-backup >/dev/null
+sudo chmod 644 /etc/cron.d/fluxy-backup
 
 sudo rm -f /etc/nginx/sites-enabled/default
 sudo ln -sfn /etc/nginx/sites-available/fluxy /etc/nginx/sites-enabled/fluxy

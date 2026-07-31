@@ -7,12 +7,14 @@ use App\Exceptions\ImageGenerationException;
 use App\Models\Content;
 use App\Models\ImageGeneration;
 use App\Models\MediaAsset;
+use App\Models\Tenant;
 use App\Services\Images\GeminiCaptionService;
 use App\Services\Images\GoogleDriveImageFetcher;
 use App\Services\UsageService;
 use App\Support\ModulePresenter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -68,19 +70,44 @@ class PixelController extends ApiController
         ]);
         $tenant = $request->user()->currentTenant;
         $idempotencyKey = $request->header('Idempotency-Key') ?: (string) Str::ulid();
-        $existing = ImageGeneration::where('tenant_id', $tenant->id)
-            ->where('idempotency_key', $idempotencyKey)
-            ->first();
+        $prompt = $this->imagePrompt($validated);
+        [$generation, $created] = DB::transaction(function () use (
+            $tenant,
+            $request,
+            $provider,
+            $validated,
+            $idempotencyKey,
+            $prompt,
+            $usage,
+        ): array {
+            Tenant::query()->whereKey($tenant->id)->lockForUpdate()->firstOrFail();
+            $existing = ImageGeneration::where('tenant_id', $tenant->id)
+                ->where('idempotency_key', $idempotencyKey)
+                ->first();
+            if ($existing) {
+                return [$existing, false];
+            }
 
-        if ($existing) {
+            $usage->assertAvailable($tenant, 'pixel');
+
+            return [ImageGeneration::create([
+                'tenant_id' => $tenant->id,
+                'user_id' => $request->user()->id,
+                'provider' => $provider->name(),
+                'content_type' => $validated['content_type'],
+                'prompt' => $prompt,
+                'status' => 'processing',
+                'idempotency_key' => $idempotencyKey,
+            ]), true];
+        });
+
+        if (! $created) {
             return response()->json([
                 'message' => 'Image generation request was already received.',
-                'status' => $existing->status,
+                'status' => $generation->status,
+                'generation_id' => $generation->id,
             ], 202);
         }
-
-        // Avoid spending provider quota when the tenant has no Pixel credits left.
-        $usage->assertAvailable($tenant, 'pixel');
 
         $input = null;
         $inputBytes = null;
@@ -90,9 +117,16 @@ class PixelController extends ApiController
             $inputBytes = file_get_contents($file->getRealPath());
             $inputMimeType = (string) $file->getMimeType();
             if ($inputBytes === false) {
-                throw new ImageGenerationException('Uploaded image could not be read.');
+                $generation->update(['status' => 'failed', 'error_message' => 'Uploaded image could not be read.']);
+
+                return response()->json(['message' => 'Uploaded image could not be read.'], 422);
             }
             $path = $file->store('tenants/'.$tenant->id.'/pixel/input', 'public');
+            if (! is_string($path) || $path === '') {
+                $generation->update(['status' => 'failed', 'error_message' => 'Uploaded image could not be stored.']);
+
+                return response()->json(['message' => 'Uploaded image could not be stored.'], 500);
+            }
             $input = MediaAsset::create([
                 'tenant_id' => $tenant->id, 'user_id' => $request->user()->id,
                 'type' => 'image', 'disk' => 'public', 'path' => $path,
@@ -102,6 +136,8 @@ class PixelController extends ApiController
             try {
                 $downloaded = $driveFetcher->fetch($validated['gdrive_link']);
             } catch (ImageGenerationException $exception) {
+                $generation->update(['status' => 'failed', 'error_message' => $exception->getMessage()]);
+
                 return response()->json([
                     'message' => $exception->getMessage(),
                     'error' => 'reference_image_unavailable',
@@ -110,7 +146,11 @@ class PixelController extends ApiController
             $inputBytes = $downloaded['bytes'];
             $inputMimeType = $downloaded['mimeType'];
             $path = 'tenants/'.$tenant->id.'/pixel/input/'.Str::ulid().'.'.$downloaded['extension'];
-            Storage::disk('public')->put($path, $inputBytes);
+            if (! Storage::disk('public')->put($path, $inputBytes)) {
+                $generation->update(['status' => 'failed', 'error_message' => 'Reference image could not be stored.']);
+
+                return response()->json(['message' => 'Reference image could not be stored.'], 500);
+            }
             $input = MediaAsset::create([
                 'tenant_id' => $tenant->id, 'user_id' => $request->user()->id,
                 'type' => 'image', 'disk' => 'public', 'path' => $path,
@@ -119,14 +159,7 @@ class PixelController extends ApiController
             ]);
         }
 
-        $prompt = $this->imagePrompt($validated);
-        $generation = ImageGeneration::create([
-            'tenant_id' => $tenant->id, 'user_id' => $request->user()->id,
-            'input_media_id' => $input?->id, 'provider' => $provider->name(),
-            'content_type' => $validated['content_type'],
-            'prompt' => $prompt,
-            'status' => 'processing', 'idempotency_key' => $idempotencyKey,
-        ]);
+        $generation->update(['input_media_id' => $input?->id]);
 
         try {
             $image = $provider->generate($prompt, $validated['content_type'], $inputBytes, $inputMimeType);

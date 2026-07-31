@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnforceTrustedCorsOrigin;
 use App\Http\Middleware\EnsureActiveSubscription;
 use App\Http\Middleware\EnsureAdmin;
 use App\Http\Middleware\EnsureApprovedTenant;
@@ -22,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
             explode(',', (string) env('TRUSTED_PROXIES', '127.0.0.1,::1')),
         )));
         $middleware->trustProxies(at: $trustedProxies);
+        $middleware->prepend(EnforceTrustedCorsOrigin::class);
         $middleware->append(SecurityHeaders::class);
         $middleware->alias([
             'admin' => EnsureAdmin::class,
