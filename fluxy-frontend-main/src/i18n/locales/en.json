@@ -1,0 +1,182 @@
+{
+  "common": {
+    "or": "or"
+  },
+  "auth": {
+    "login": {
+      "title": "Sign In to Your Account",
+      "subtitle": "Use your email and password to sign in",
+      "emailLabel": "Email",
+      "emailPlaceholder": "name@business.com",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Enter your password",
+      "submit": "Sign In",
+      "submitting": "Signing in...",
+      "googleButton": "Sign in with Google",
+      "noAccount": "Don't have an account?",
+      "registerLink": "Sign up now",
+      "successToast": "Signed in successfully!",
+      "errorToast": "Sign in failed. Check your email and password.",
+      "validation": {
+        "emailInvalid": "Invalid email",
+        "passwordMin": "Password must be at least 6 characters"
+      }
+    },
+    "register": {
+      "title": "Create a New Account",
+      "subtitle": "Sign up to start using AI Employees",
+      "nameLabel": "Full Name",
+      "namePlaceholder": "John Doe",
+      "businessNameLabel": "Business Name",
+      "businessNamePlaceholder": "Maju Jaya Store",
+      "industryLabel": "Industry Category",
+      "industryPlaceholder": "Select an industry category",
+      "emailLabel": "Email",
+      "emailPlaceholder": "name@business.com",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "At least 8 characters",
+      "passwordConfirmLabel": "Confirm Password",
+      "passwordConfirmPlaceholder": "Re-enter password",
+      "submit": "Sign Up",
+      "submitting": "Signing up...",
+      "googleButton": "Sign up with Google",
+      "hasAccount": "Already have an account?",
+      "loginLink": "Sign in",
+      "successToast": "Registration successful! Waiting for admin approval.",
+      "errorToast": "Registration failed. Please try again.",
+      "industries": {
+        "ecommerce": "E-commerce / Online Shop",
+        "foodBeverage": "Food & Beverage",
+        "fashion": "Fashion & Clothing",
+        "beauty": "Beauty & Skincare",
+        "health": "Health & Wellness",
+        "education": "Education",
+        "realEstate": "Real Estate",
+        "automotive": "Automotive",
+        "technology": "Technology / IT Services",
+        "professionalServices": "Professional Services",
+        "retail": "Retail / Offline Store",
+        "hospitality": "Hospitality & Tourism",
+        "media": "Media & Entertainment",
+        "agriculture": "Agriculture",
+        "manufacturing": "Manufacturing",
+        "other": "Other"
+      },
+      "validation": {
+        "nameMin": "Name must be at least 2 characters",
+        "emailInvalid": "Invalid email",
+        "businessNameMin": "Business name must be at least 2 characters",
+        "industryRequired": "Select an industry category",
+        "passwordMin": "Password must be at least 8 characters",
+        "passwordMismatch": "Passwords do not match"
+      }
+    }
+  },
+  "dashboard": {
+    "welcome": "Welcome, {{name}}!",
+    "subtitle": "Manage your business with AI Employees",
+    "daysLeft": "{{count}} days left",
+    "onboarding": {
+      "badge": "✨ Welcome to Fluxy AI Workspace",
+      "title": "Start Automating Your Business Operations",
+      "description": "Fluxy connects 4 AI Employees (Pixel, Maya, Echo, Kai) to help with product image creation, social media scheduling, analytics, and automated WhatsApp customer service.",
+      "tryPixel": "Try Pixel AI",
+      "connectSocial": "Connect Social Media"
+    },
+    "subscriptionAlert": {
+      "expiredTitle": "Your subscription has ended",
+      "inactiveTitle": "No active subscription yet",
+      "expiredDescription": "Contact Fluxy admin to renew your subscription.",
+      "inactiveDescription": "Contact Fluxy admin to activate your subscription and start using AI Employees."
+    },
+    "employees": {
+      "title": "AI Employees",
+      "available": "{{count}} available",
+      "pixel": "AI Creative Designer for product photos",
+      "maya": "Social Media Manager & Publisher",
+      "echo": "Social Media Analytics",
+      "kai": "WhatsApp Sales & Service Chatbot"
+    },
+    "recentActivity": {
+      "title": "Recent Activity",
+      "empty": "No activity yet",
+      "emptyDescription": "Create your first content using Maya",
+      "createContent": "Create Content",
+      "noCaption": "No caption"
+    },
+    "usage": {
+      "title": "Usage Summary",
+      "thisMonth": "{{unit}} this month",
+      "unit": {
+        "gambar": "images",
+        "post": "posts",
+        "view": "views",
+        "pesan": "messages"
+      }
+    }
+  },
+  "settings": {
+    "title": "Settings & Subscription",
+    "subtitle": "Manage your business profile, subscription status, and AI Employees quota usage.",
+    "subscription": {
+      "title": "Plan & Subscription Status",
+      "description": "Your subscription account details and Fluxy feature access",
+      "activePlan": "Active Plan",
+      "planName": "Fluxy Pro Tier",
+      "startDate": "Start Date",
+      "endDate": "Valid Until",
+      "defaultStartDate": "July 1, 2026",
+      "defaultEndDate": "December 31, 2026",
+      "upgradeTitle": "Want to Upgrade or Extend Your Plan?",
+      "upgradeDescription": "Contact the Fluxy Admin team for help with quota and payment adjustments.",
+      "contactAdmin": "Contact Admin"
+    },
+    "profile": {
+      "title": "Business Profile & Account",
+      "description": "Update your business data used by AI Employees",
+      "ownerName": "Account Owner Name",
+      "email": "Email",
+      "businessName": "Business / Brand Name",
+      "businessNamePlaceholder": "e.g. Maju Jaya Store",
+      "industry": "Industry Category",
+      "industryPlaceholder": "e.g. E-commerce / Fashion",
+      "timezone": "Timezone",
+      "language": "Interface Language",
+      "languagePlaceholder": "Select language",
+      "save": "Save Changes",
+      "saving": "Saving...",
+      "saveSuccessToast": "Business profile updated successfully!",
+      "languageChangedToast": "Language changed to {{language}}",
+      "languages": {
+        "id": "Bahasa Indonesia",
+        "en": "English"
+      }
+    },
+    "usage": {
+      "title": "AI Employees Quota Usage Detail",
+      "description": "Daily/monthly quota consumption for each of your AI Employees",
+      "pixel": "Pixel (AI Designer)",
+      "pixelDescription": "AI Image Generation",
+      "pixelUnit": "Images",
+      "maya": "Maya (Social Media)",
+      "mayaDescription": "Post Scheduling & Publishing",
+      "mayaUnit": "Posts",
+      "echo": "Echo (Analytics)",
+      "echoDescription": "Monitoring Insights",
+      "echoUnlimited": "Unlimited",
+      "kai": "Kai (WhatsApp SDR)",
+      "kaiDescription": "Chatbot & Broadcast Messages",
+      "kaiUnit": "Messages"
+    },
+    "connections": {
+      "title": "Connected Platforms",
+      "description": "Overview of connected social media and WhatsApp channels",
+      "maya": "Maya — Social Media Accounts",
+      "mayaStatus": "Instagram (@tokomajujaya) & TikTok connected",
+      "mayaManage": "Manage Maya Accounts",
+      "kai": "Kai — WhatsApp Business API",
+      "kaiStatus": "Number: +62 812-3456-789 (Status: Connected)",
+      "kaiSetup": "Setup Kai Device"
+    }
+  }
+}

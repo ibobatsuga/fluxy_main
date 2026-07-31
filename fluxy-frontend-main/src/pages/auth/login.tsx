@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useTranslation } from "react-i18next";
 import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,17 +14,22 @@ import { AuthShell } from "@/components/layout/auth-shell";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/error";
 
-const loginSchema = z.object({
-  email: z.string().email("Email tidak valid"),
-  password: z.string().min(6, "Password minimal 6 karakter"),
-});
+function buildLoginSchema(t: (key: string) => string) {
+  return z.object({
+    email: z.string().email(t("auth.login.validation.emailInvalid")),
+    password: z.string().min(6, t("auth.login.validation.passwordMin")),
+  });
+}
 
-type LoginForm = z.infer<typeof loginSchema>;
+type LoginForm = z.infer<ReturnType<typeof buildLoginSchema>>;
 
 export function LoginPage() {
+  const { t, i18n } = useTranslation();
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const { login, isLoading } = useAuthStore();
+
+  const loginSchema = useMemo(() => buildLoginSchema(t), [i18n.language]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const {
     register,
@@ -36,11 +42,11 @@ export function LoginPage() {
   const onSubmit = async (data: LoginForm) => {
     try {
       await login(data);
-      toast.success("Login berhasil!");
+      toast.success(t("auth.login.successToast"));
       const user = useAuthStore.getState().user;
       navigate(user?.is_admin && !user.business_name ? "/admin/tenants" : "/dashboard");
     } catch (error: unknown) {
-      toast.error(getErrorMessage(error, "Login gagal. Periksa email dan password."));
+      toast.error(getErrorMessage(error, t("auth.login.errorToast")));
     }
   };
 
@@ -48,20 +54,20 @@ export function LoginPage() {
     <AuthShell>
       <Card className="shadow-xl">
         <CardHeader className="text-center">
-          <CardTitle className="text-xl">Masuk ke Akun Anda</CardTitle>
+          <CardTitle className="text-xl">{t("auth.login.title")}</CardTitle>
           <CardDescription>
-            Gunakan email dan password untuk masuk
+            {t("auth.login.subtitle")}
           </CardDescription>
         </CardHeader>
         <CardContent>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t("auth.login.emailLabel")}</Label>
                 <Input
                   id="email"
                   type="email"
                   autoComplete="email"
-                  placeholder="nama@bisnis.com"
+                  placeholder={t("auth.login.emailPlaceholder")}
                   {...register("email")}
                 />
                 {errors.email && (
@@ -70,13 +76,13 @@ export function LoginPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">{t("auth.login.passwordLabel")}</Label>
                 <div className="relative">
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
                     autoComplete="current-password"
-                    placeholder="Masukkan password"
+                    placeholder={t("auth.login.passwordPlaceholder")}
                     {...register("password")}
                   />
                   <Button
@@ -99,7 +105,7 @@ export function LoginPage() {
               </div>
 
               <Button type="submit" variant="gradient" className="w-full" disabled={isLoading}>
-                {isLoading ? "Masuk..." : "Masuk"}
+                {isLoading ? t("auth.login.submitting") : t("auth.login.submit")}
               </Button>
             </form>
 
@@ -108,7 +114,7 @@ export function LoginPage() {
                 <div className="w-full border-t" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">atau</span>
+                <span className="bg-card px-2 text-muted-foreground">{t("common.or")}</span>
               </div>
             </div>
 
@@ -138,13 +144,13 @@ export function LoginPage() {
                   fill="#EA4335"
                 />
               </svg>
-              Masuk dengan Google
+              {t("auth.login.googleButton")}
             </Button>
 
             <div className="mt-4 text-center text-sm">
-              <span className="text-muted-foreground">Belum punya akun? </span>
+              <span className="text-muted-foreground">{t("auth.login.noAccount")} </span>
               <Link to="/register" className="font-medium text-violet-600 hover:underline">
-                Daftar sekarang
+                {t("auth.login.registerLink")}
               </Link>
             </div>
         </CardContent>

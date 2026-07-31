@@ -1,6 +1,8 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuthStore } from "@/stores/auth";
+import { useLanguageStore } from "@/stores/language";
 import { useRecentPosts, useUsageSummary } from "@/hooks/use-dashboard";
 import {
   Palette,
@@ -16,7 +18,7 @@ import {
   Plus,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { id } from "date-fns/locale";
+import { id as idLocale, enUS } from "date-fns/locale";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -27,7 +29,7 @@ import { getSubscriptionBadge } from "@/components/layout/subscription-badge";
 const aiEmployees = [
   {
     name: "Pixel",
-    description: "Desainer Kreatif AI untuk foto produk",
+    descriptionKey: "dashboard.employees.pixel",
     icon: Palette,
     color: "text-blue-600",
     bg: "bg-blue-100",
@@ -36,7 +38,7 @@ const aiEmployees = [
   },
   {
     name: "Maya",
-    description: "Manajer & Publisher Media Sosial",
+    descriptionKey: "dashboard.employees.maya",
     icon: Calendar,
     color: "text-blue-600",
     bg: "bg-blue-100",
@@ -45,7 +47,7 @@ const aiEmployees = [
   },
   {
     name: "Echo",
-    description: "Analitik Media Sosial",
+    descriptionKey: "dashboard.employees.echo",
     icon: BarChart3,
     color: "text-amber-600",
     bg: "bg-amber-100",
@@ -54,19 +56,22 @@ const aiEmployees = [
   },
   {
     name: "Kai",
-    description: "Chatbot Sales & Layanan WhatsApp",
+    descriptionKey: "dashboard.employees.kai",
     icon: MessageSquare,
     color: "text-teal-600",
     bg: "bg-teal-100",
     border: "border-teal-200",
     to: "/kai",
   },
-];
+] as const;
 
 export function DashboardPage() {
+  const { t } = useTranslation();
+  const { language } = useLanguageStore();
   const { user, fetchUser } = useAuthStore();
   const { data: recentPosts, isLoading: postsLoading } = useRecentPosts(5);
   const { data: usage } = useUsageSummary();
+  const dateLocale = language === "en" ? enUS : idLocale;
 
   useEffect(() => {
     if (!user) {
@@ -90,10 +95,10 @@ export function DashboardPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
-            Selamat datang, {user?.name?.split(" ")[0] || "User"}!
+            {t("dashboard.welcome", { name: user?.name?.split(" ")[0] || "User" })}
           </h1>
           <p className="text-muted-foreground">
-            Kelola bisnis Anda dengan AI Employees
+            {t("dashboard.subtitle")}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -102,7 +107,7 @@ export function DashboardPage() {
               {getSubscriptionBadge(user.subscription_status)}
               {isSubscriptionActive && daysUntilExpiry !== null && daysUntilExpiry <= 7 && daysUntilExpiry > 0 && (
                 <Badge variant="warning" className="text-[10px]">
-                  {daysUntilExpiry} hari lagi
+                  {t("dashboard.daysLeft", { count: daysUntilExpiry })}
                 </Badge>
               )}
             </div>
@@ -116,24 +121,24 @@ export function DashboardPage() {
           <CardContent className="p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
             <div className="space-y-2">
               <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-semibold">
-                ✨ Selamat Datang di Fluxy AI Workspace
+                {t("dashboard.onboarding.badge")}
               </div>
               <h2 className="text-xl font-bold tracking-tight">
-                Mulai Otomatisasi Operasional Bisnis Anda
+                {t("dashboard.onboarding.title")}
               </h2>
               <p className="text-sm text-muted-foreground max-w-xl">
-                Fluxy menghubungkan 4 AI Employees (Pixel, Maya, Echo, Kai) untuk membantu pembuatan gambar produk, penjadwalan media sosial, analitik, dan layanan pelanggan WhatsApp secara otomatis.
+                {t("dashboard.onboarding.description")}
               </p>
             </div>
             <div className="flex flex-wrap gap-2 shrink-0">
               <Button size="sm" asChild>
                 <Link to="/pixel">
-                  <Palette className="mr-1.5 h-4 w-4" /> Coba Pixel AI
+                  <Palette className="mr-1.5 h-4 w-4" /> {t("dashboard.onboarding.tryPixel")}
                 </Link>
               </Button>
               <Button size="sm" variant="outline" asChild>
                 <Link to="/maya/connect">
-                  <Calendar className="mr-1.5 h-4 w-4" /> Hubungkan Medsos
+                  <Calendar className="mr-1.5 h-4 w-4" /> {t("dashboard.onboarding.connectSocial")}
                 </Link>
               </Button>
             </div>
@@ -155,13 +160,13 @@ export function DashboardPage() {
             <div className="flex-1">
               <p className="text-sm font-medium">
                 {subscriptionExpired
-                  ? "Subscription Anda telah berakhir"
-                  : "Belum ada subscription aktif"}
+                  ? t("dashboard.subscriptionAlert.expiredTitle")
+                  : t("dashboard.subscriptionAlert.inactiveTitle")}
               </p>
               <p className="text-xs text-muted-foreground">
                 {subscriptionExpired
-                  ? "Hubungi admin Fluxy untuk memperpanjang langganan Anda."
-                  : "Hubungi admin Fluxy untuk mengaktifkan langganan Anda dan mulai menggunakan AI Employees."}
+                  ? t("dashboard.subscriptionAlert.expiredDescription")
+                  : t("dashboard.subscriptionAlert.inactiveDescription")}
               </p>
             </div>
           </CardContent>
@@ -171,8 +176,8 @@ export function DashboardPage() {
       {/* AI Employees */}
       <section>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">AI Employees</h2>
-          <span className="text-xs text-muted-foreground">4 tersedia</span>
+          <h2 className="text-lg font-semibold">{t("dashboard.employees.title")}</h2>
+          <span className="text-xs text-muted-foreground">{t("dashboard.employees.available", { count: aiEmployees.length })}</span>
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {aiEmployees.map((employee) => (
@@ -189,7 +194,7 @@ export function DashboardPage() {
                 <CardContent className="pt-0">
                   <CardTitle className="text-base">{employee.name}</CardTitle>
                   <CardDescription className="mt-1 text-xs leading-relaxed">
-                    {employee.description}
+                    {t(employee.descriptionKey)}
                   </CardDescription>
                 </CardContent>
               </Card>
@@ -201,7 +206,7 @@ export function DashboardPage() {
       {/* Recent Activity */}
       <section>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Aktivitas Terakhir</h2>
+          <h2 className="text-lg font-semibold">{t("dashboard.recentActivity.title")}</h2>
         </div>
 
         {postsLoading ? (
@@ -245,7 +250,7 @@ export function DashboardPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm line-clamp-2">
-                        {post.content?.caption || "No caption"}
+                        {post.content?.caption || t("dashboard.recentActivity.noCaption")}
                       </p>
                       <div className="mt-1 flex items-center gap-2">
                         <Badge variant={
@@ -259,7 +264,7 @@ export function DashboardPage() {
                         <span className="text-[10px] text-muted-foreground">
                           {formatDistanceToNow(new Date(post.created_at), {
                             addSuffix: true,
-                            locale: id,
+                            locale: dateLocale,
                           })}
                         </span>
                       </div>
@@ -274,13 +279,13 @@ export function DashboardPage() {
             <CardContent className="p-0">
               <EmptyState
                 icon={Calendar}
-                title="Belum ada aktivitas"
-                description="Buat konten pertama Anda menggunakan Maya"
+                title={t("dashboard.recentActivity.empty")}
+                description={t("dashboard.recentActivity.emptyDescription")}
                 action={
                   <Button asChild size="sm">
                     <Link to="/maya/create">
                       <Plus className="mr-2 h-4 w-4" />
-                      Buat Konten
+                      {t("dashboard.recentActivity.createContent")}
                     </Link>
                   </Button>
                 }
@@ -292,13 +297,13 @@ export function DashboardPage() {
 
       {/* Quick Stats */}
       <section>
-        <h2 className="mb-4 text-lg font-semibold">Ringkasan Penggunaan</h2>
+        <h2 className="mb-4 text-lg font-semibold">{t("dashboard.usage.title")}</h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <UsageCard
             title="Pixel"
             used={usage?.pixel.used ?? 0}
             limit={usage?.pixel.limit ?? 50}
-            unit="gambar"
+            unit={t("dashboard.usage.unit.gambar")}
             icon={Palette}
             color="text-blue-600"
           />
@@ -306,7 +311,7 @@ export function DashboardPage() {
             title="Maya"
             used={usage?.maya.used ?? 0}
             limit={usage?.maya.limit ?? 60}
-            unit="post"
+            unit={t("dashboard.usage.unit.post")}
             icon={Calendar}
             color="text-blue-600"
           />
@@ -314,7 +319,7 @@ export function DashboardPage() {
             title="Echo"
             used={usage?.echo.used ?? 0}
             limit={usage?.echo.limit ?? -1}
-            unit="view"
+            unit={t("dashboard.usage.unit.view")}
             icon={BarChart3}
             color="text-amber-600"
             unlimited
@@ -323,7 +328,7 @@ export function DashboardPage() {
             title="Kai"
             used={usage?.kai.used ?? 0}
             limit={usage?.kai.limit ?? 1000}
-            unit="pesan"
+            unit={t("dashboard.usage.unit.pesan")}
             icon={MessageSquare}
             color="text-teal-600"
           />
@@ -350,6 +355,7 @@ function UsageCard({
   color: string;
   unlimited?: boolean;
 }) {
+  const { t } = useTranslation();
   const percentage = unlimited ? 0 : limit > 0 ? (used / limit) * 100 : 0;
   const isWarning = percentage >= 80;
   const isCritical = percentage >= 95;
@@ -364,7 +370,7 @@ function UsageCard({
             </div>
             <div>
               <p className="text-sm font-medium">{title}</p>
-              <p className="text-xs text-muted-foreground">{unit} bulan ini</p>
+              <p className="text-xs text-muted-foreground">{t("dashboard.usage.thisMonth", { unit })}</p>
             </div>
           </div>
           <div className="text-right">

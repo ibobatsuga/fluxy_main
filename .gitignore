@@ -5,6 +5,7 @@ Thumbs.db
 backups/
 *.pem
 *.key
+.claude/settings.local.json
 
 # Backend
 fluxy-backend/.env

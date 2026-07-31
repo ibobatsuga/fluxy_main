@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useTranslation } from "react-i18next";
 import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,45 +14,50 @@ import { AuthShell } from "@/components/layout/auth-shell";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/error";
 
-const INDUSTRY_OPTIONS = [
-  "E-commerce / Online Shop",
-  "Food & Beverage",
-  "Fashion & Clothing",
-  "Beauty & Skincare",
-  "Health & Wellness",
-  "Education",
-  "Real Estate",
-  "Automotive",
-  "Technology / IT Services",
-  "Professional Services",
-  "Retail / Offline Store",
-  "Hospitality & Tourism",
-  "Media & Entertainment",
-  "Agriculture",
-  "Manufacturing",
-  "Lainnya",
-];
+const INDUSTRY_OPTION_KEYS = [
+  "ecommerce",
+  "foodBeverage",
+  "fashion",
+  "beauty",
+  "health",
+  "education",
+  "realEstate",
+  "automotive",
+  "technology",
+  "professionalServices",
+  "retail",
+  "hospitality",
+  "media",
+  "agriculture",
+  "manufacturing",
+  "other",
+] as const;
 
-const registerSchema = z
-  .object({
-    name: z.string().min(2, "Nama minimal 2 karakter"),
-    email: z.string().email("Email tidak valid"),
-    business_name: z.string().min(2, "Nama bisnis minimal 2 karakter"),
-    industry_category: z.string().min(1, "Pilih kategori industri"),
-    password: z.string().min(8, "Password minimal 8 karakter"),
-    password_confirmation: z.string(),
-  })
-  .refine((data) => data.password === data.password_confirmation, {
-    message: "Password tidak cocok",
-    path: ["password_confirmation"],
-  });
+function buildRegisterSchema(t: (key: string) => string) {
+  return z
+    .object({
+      name: z.string().min(2, t("auth.register.validation.nameMin")),
+      email: z.string().email(t("auth.register.validation.emailInvalid")),
+      business_name: z.string().min(2, t("auth.register.validation.businessNameMin")),
+      industry_category: z.string().min(1, t("auth.register.validation.industryRequired")),
+      password: z.string().min(8, t("auth.register.validation.passwordMin")),
+      password_confirmation: z.string(),
+    })
+    .refine((data) => data.password === data.password_confirmation, {
+      message: t("auth.register.validation.passwordMismatch"),
+      path: ["password_confirmation"],
+    });
+}
 
-type RegisterForm = z.infer<typeof registerSchema>;
+type RegisterForm = z.infer<ReturnType<typeof buildRegisterSchema>>;
 
 export function RegisterPage() {
+  const { t, i18n } = useTranslation();
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const { register: registerUser, isLoading } = useAuthStore();
+
+  const registerSchema = useMemo(() => buildRegisterSchema(t), [i18n.language]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const {
     register,
@@ -67,10 +73,10 @@ export function RegisterPage() {
         ...data,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       });
-      toast.success("Registrasi berhasil! Menunggu persetujuan admin.");
+      toast.success(t("auth.register.successToast"));
       navigate("/pending-approval");
     } catch (error: unknown) {
-      toast.error(getErrorMessage(error, "Registrasi gagal. Silakan coba lagi."));
+      toast.error(getErrorMessage(error, t("auth.register.errorToast")));
     }
   };
 
@@ -78,27 +84,27 @@ export function RegisterPage() {
     <AuthShell>
       <Card className="shadow-xl">
         <CardHeader className="text-center">
-          <CardTitle className="text-xl">Buat Akun Baru</CardTitle>
+          <CardTitle className="text-xl">{t("auth.register.title")}</CardTitle>
           <CardDescription>
-            Daftar untuk memulai menggunakan AI Employees
+            {t("auth.register.subtitle")}
           </CardDescription>
         </CardHeader>
         <CardContent>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Nama Lengkap</Label>
-                <Input id="name" autoComplete="name" placeholder="John Doe" {...register("name")} />
+                <Label htmlFor="name">{t("auth.register.nameLabel")}</Label>
+                <Input id="name" autoComplete="name" placeholder={t("auth.register.namePlaceholder")} {...register("name")} />
                 {errors.name && (
                   <p className="text-xs text-destructive">{errors.name.message}</p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="business_name">Nama Bisnis</Label>
+                <Label htmlFor="business_name">{t("auth.register.businessNameLabel")}</Label>
                 <Input
                   id="business_name"
                   autoComplete="organization"
-                  placeholder="Toko Maju Jaya"
+                  placeholder={t("auth.register.businessNamePlaceholder")}
                   {...register("business_name")}
                 />
                 {errors.business_name && (
@@ -107,16 +113,16 @@ export function RegisterPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="industry_category">Kategori Industri</Label>
+                <Label htmlFor="industry_category">{t("auth.register.industryLabel")}</Label>
                 <select
                   id="industry_category"
                   className="flex h-10 w-full rounded-xl border border-input bg-transparent px-3.5 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   {...register("industry_category")}
                 >
-                  <option value="">Pilih kategori industri</option>
-                  {INDUSTRY_OPTIONS.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
+                  <option value="">{t("auth.register.industryPlaceholder")}</option>
+                  {INDUSTRY_OPTION_KEYS.map((key) => (
+                    <option key={key} value={t(`auth.register.industries.${key}`)}>
+                      {t(`auth.register.industries.${key}`)}
                     </option>
                   ))}
                 </select>
@@ -128,12 +134,12 @@ export function RegisterPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t("auth.register.emailLabel")}</Label>
                 <Input
                   id="email"
                   type="email"
                   autoComplete="email"
-                  placeholder="nama@bisnis.com"
+                  placeholder={t("auth.register.emailPlaceholder")}
                   {...register("email")}
                 />
                 {errors.email && (
@@ -142,13 +148,13 @@ export function RegisterPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">{t("auth.register.passwordLabel")}</Label>
                 <div className="relative">
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
                     autoComplete="new-password"
-                    placeholder="Minimal 8 karakter"
+                    placeholder={t("auth.register.passwordPlaceholder")}
                     {...register("password")}
                   />
                   <Button
@@ -171,12 +177,12 @@ export function RegisterPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password_confirmation">Konfirmasi Password</Label>
+                <Label htmlFor="password_confirmation">{t("auth.register.passwordConfirmLabel")}</Label>
                 <Input
                   id="password_confirmation"
                   type="password"
                   autoComplete="new-password"
-                  placeholder="Ulangi password"
+                  placeholder={t("auth.register.passwordConfirmPlaceholder")}
                   {...register("password_confirmation")}
                 />
                 {errors.password_confirmation && (
@@ -187,7 +193,7 @@ export function RegisterPage() {
               </div>
 
               <Button type="submit" variant="gradient" className="w-full" disabled={isLoading}>
-                {isLoading ? "Mendaftar..." : "Daftar"}
+                {isLoading ? t("auth.register.submitting") : t("auth.register.submit")}
               </Button>
             </form>
 
@@ -196,7 +202,7 @@ export function RegisterPage() {
                 <div className="w-full border-t" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">atau</span>
+                <span className="bg-card px-2 text-muted-foreground">{t("common.or")}</span>
               </div>
             </div>
 
@@ -226,13 +232,13 @@ export function RegisterPage() {
                   fill="#EA4335"
                 />
               </svg>
-              Daftar dengan Google
+              {t("auth.register.googleButton")}
             </Button>
 
             <div className="mt-4 text-center text-sm">
-              <span className="text-muted-foreground">Sudah punya akun? </span>
+              <span className="text-muted-foreground">{t("auth.register.hasAccount")} </span>
               <Link to="/login" className="font-medium text-violet-600 hover:underline">
-                Masuk
+                {t("auth.register.loginLink")}
               </Link>
             </div>
         </CardContent>

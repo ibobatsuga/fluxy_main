@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuthStore } from "@/stores/auth";
 import { useUsageSummary } from "@/hooks/use-usage";
+import { useLanguageStore } from "@/stores/language";
+import { SUPPORTED_LANGUAGES, type SupportedLanguage } from "@/i18n";
 import {
   CreditCard,
   Building2,
@@ -31,24 +34,27 @@ import {
 import { getSubscriptionBadge } from "@/components/layout/subscription-badge";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { id } from "date-fns/locale";
+import { id as idLocale, enUS } from "date-fns/locale";
 
 export function SettingsPage() {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const { data: usage } = useUsageSummary();
+  const { language, setLanguage } = useLanguageStore();
 
   const [businessName, setBusinessName] = useState(user?.business_name || "");
   const [industryCategory, setIndustryCategory] = useState(user?.industry_category || "");
   const [timezone, setTimezone] = useState(user?.timezone || "Asia/Jakarta");
-  const [language, setLanguage] = useState("id");
   const [isSaving, setIsSaving] = useState(false);
+
+  const dateLocale = language === "en" ? enUS : idLocale;
 
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
     setTimeout(() => {
       setIsSaving(false);
-      toast.success("Profil bisnis berhasil diperbarui!");
+      toast.success(t("settings.profile.saveSuccessToast"));
     }, 600);
   };
 
@@ -58,9 +64,9 @@ export function SettingsPage() {
   return (
     <div className="space-y-8 max-w-5xl">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Pengaturan & Langganan</h1>
+        <h1 className="text-2xl font-bold tracking-tight">{t("settings.title")}</h1>
         <p className="text-muted-foreground">
-          Kelola profil bisnis, status langganan, dan pemakaian kuota AI Employees Anda.
+          {t("settings.subtitle")}
         </p>
       </div>
 
@@ -70,10 +76,10 @@ export function SettingsPage() {
           <div>
             <CardTitle className="text-lg flex items-center gap-2">
               <CreditCard className="h-5 w-5 text-primary" />
-              Paket & Status Langganan
+              {t("settings.subscription.title")}
             </CardTitle>
             <CardDescription>
-              Detail akun langganan dan akses fitur Fluxy Anda
+              {t("settings.subscription.description")}
             </CardDescription>
           </div>
           {user?.subscription_status && getSubscriptionBadge(user.subscription_status)}
@@ -81,19 +87,19 @@ export function SettingsPage() {
         <CardContent className="space-y-6">
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="rounded-lg border bg-background/60 p-4">
-              <p className="text-xs text-muted-foreground font-medium">Paket Aktif</p>
-              <p className="text-lg font-bold mt-1 text-foreground">Fluxy Pro Tier</p>
+              <p className="text-xs text-muted-foreground font-medium">{t("settings.subscription.activePlan")}</p>
+              <p className="text-lg font-bold mt-1 text-foreground">{t("settings.subscription.planName")}</p>
             </div>
             <div className="rounded-lg border bg-background/60 p-4">
-              <p className="text-xs text-muted-foreground font-medium">Tanggal Mulai</p>
+              <p className="text-xs text-muted-foreground font-medium">{t("settings.subscription.startDate")}</p>
               <p className="text-sm font-semibold mt-1">
-                {subStart ? format(subStart, "dd MMMM yyyy", { locale: id }) : "1 Juli 2026"}
+                {subStart ? format(subStart, "dd MMMM yyyy", { locale: dateLocale }) : t("settings.subscription.defaultStartDate")}
               </p>
             </div>
             <div className="rounded-lg border bg-background/60 p-4">
-              <p className="text-xs text-muted-foreground font-medium">Berlaku Hingga</p>
+              <p className="text-xs text-muted-foreground font-medium">{t("settings.subscription.endDate")}</p>
               <p className="text-sm font-semibold mt-1 text-primary">
-                {subEnd ? format(subEnd, "dd MMMM yyyy", { locale: id }) : "31 Desember 2026"}
+                {subEnd ? format(subEnd, "dd MMMM yyyy", { locale: dateLocale }) : t("settings.subscription.defaultEndDate")}
               </p>
             </div>
           </div>
@@ -102,9 +108,9 @@ export function SettingsPage() {
             <div className="flex items-center gap-3">
               <ShieldCheck className="h-5 w-5 text-emerald-500 shrink-0" />
               <div>
-                <p className="font-medium">Ingin Upgrade atau Perpanjang Paket?</p>
+                <p className="font-medium">{t("settings.subscription.upgradeTitle")}</p>
                 <p className="text-xs text-muted-foreground">
-                  Hubungi tim Admin Fluxy untuk bantuan penyesuaian kuota dan pembayaran.
+                  {t("settings.subscription.upgradeDescription")}
                 </p>
               </div>
             </div>
@@ -115,7 +121,7 @@ export function SettingsPage() {
                 window.open("https://wa.me/6281234567890?text=Halo%20Admin%20Fluxy,%20saya%20inik%20tanya%20upgrade%20paket", "_blank");
               }}
             >
-              Hubungi Admin <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
+              {t("settings.subscription.contactAdmin")} <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
             </Button>
           </div>
         </CardContent>
@@ -126,46 +132,46 @@ export function SettingsPage() {
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
             <Building2 className="h-5 w-5 text-primary" />
-            Profil Bisnis & Akun
+            {t("settings.profile.title")}
           </CardTitle>
           <CardDescription>
-            Perbarui data usaha Anda yang digunakan oleh AI Employees
+            {t("settings.profile.description")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSaveProfile} className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="name">Nama Pemilik Akun</Label>
+                <Label htmlFor="name">{t("settings.profile.ownerName")}</Label>
                 <Input id="name" value={user?.name || ""} disabled className="bg-muted/50" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t("settings.profile.email")}</Label>
                 <Input id="email" value={user?.email || ""} disabled className="bg-muted/50" />
               </div>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3">
               <div className="space-y-2">
-                <Label htmlFor="business_name">Nama Usaha / Brand</Label>
+                <Label htmlFor="business_name">{t("settings.profile.businessName")}</Label>
                 <Input
                   id="business_name"
                   value={businessName}
                   onChange={(e) => setBusinessName(e.target.value)}
-                  placeholder="Contoh: Toko Maju Jaya"
+                  placeholder={t("settings.profile.businessNamePlaceholder")}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="industry">Kategori Industri</Label>
+                <Label htmlFor="industry">{t("settings.profile.industry")}</Label>
                 <Input
                   id="industry"
                   value={industryCategory}
                   onChange={(e) => setIndustryCategory(e.target.value)}
-                  placeholder="Contoh: E-commerce / Fashion"
+                  placeholder={t("settings.profile.industryPlaceholder")}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="timezone">Zona Waktu</Label>
+                <Label htmlFor="timezone">{t("settings.profile.timezone")}</Label>
                 <Input
                   id="timezone"
                   value={timezone}
@@ -178,19 +184,26 @@ export function SettingsPage() {
             <div className="grid gap-4 sm:grid-cols-2 pt-2 border-t">
               <div className="space-y-2">
                 <Label htmlFor="language" className="flex items-center gap-1.5">
-                  <Languages className="h-4 w-4 text-primary" /> Bahasa Antarmuka (Language)
+                  <Languages className="h-4 w-4 text-primary" /> {t("settings.profile.language")}
                 </Label>
                 <Select value={language} onValueChange={(val) => {
-                  setLanguage(val);
-                  toast.success(`Bahasa diubah ke ${val === "id" ? "Bahasa Indonesia" : val === "en" ? "English" : "日本語"}`);
+                  const nextLanguage = val as SupportedLanguage;
+                  setLanguage(nextLanguage);
+                  toast.success(
+                    t("settings.profile.languageChangedToast", {
+                      language: t(`settings.profile.languages.${nextLanguage}`),
+                    })
+                  );
                 }}>
                   <SelectTrigger id="language">
-                    <SelectValue placeholder="Pilih bahasa" />
+                    <SelectValue placeholder={t("settings.profile.languagePlaceholder")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="id">🇮🇩 Bahasa Indonesia (ID)</SelectItem>
-                    <SelectItem value="en">🇬🇧 English (US)</SelectItem>
-                    <SelectItem value="ja">🇯🇵 日本語 (JA)</SelectItem>
+                    {SUPPORTED_LANGUAGES.map((lang) => (
+                      <SelectItem key={lang} value={lang}>
+                        {lang === "id" ? "🇮🇩" : "🇬🇧"} {t(`settings.profile.languages.${lang}`)} ({lang.toUpperCase()})
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -199,7 +212,7 @@ export function SettingsPage() {
             <div className="flex justify-end pt-2">
               <Button type="submit" disabled={isSaving}>
                 <Save className="mr-2 h-4 w-4" />
-                {isSaving ? "Menyimpan..." : "Simpan Perubahan"}
+                {isSaving ? t("settings.profile.saving") : t("settings.profile.save")}
               </Button>
             </div>
           </form>
@@ -211,10 +224,10 @@ export function SettingsPage() {
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
             <BarChart3 className="h-5 w-5 text-primary" />
-            Detail Quota Usage AI Employees
+            {t("settings.usage.title")}
           </CardTitle>
           <CardDescription>
-            Konsumsi kuota harian/bulanan masing-masing AI Employee Anda
+            {t("settings.usage.description")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -227,12 +240,12 @@ export function SettingsPage() {
                     <Palette className="h-4 w-4" />
                   </div>
                   <div>
-                    <p className="font-semibold text-sm">Pixel (AI Designer)</p>
-                    <p className="text-xs text-muted-foreground">Generasi Gambar AI</p>
+                    <p className="font-semibold text-sm">{t("settings.usage.pixel")}</p>
+                    <p className="text-xs text-muted-foreground">{t("settings.usage.pixelDescription")}</p>
                   </div>
                 </div>
                 <Badge variant="outline">
-                  {usage?.pixel.used ?? 12} / {usage?.pixel.limit ?? 50} Gambar
+                  {usage?.pixel.used ?? 12} / {usage?.pixel.limit ?? 50} {t("settings.usage.pixelUnit")}
                 </Badge>
               </div>
               <Progress
@@ -249,12 +262,12 @@ export function SettingsPage() {
                     <Calendar className="h-4 w-4" />
                   </div>
                   <div>
-                    <p className="font-semibold text-sm">Maya (Social Media)</p>
-                    <p className="text-xs text-muted-foreground">Jadwal & Publish Post</p>
+                    <p className="font-semibold text-sm">{t("settings.usage.maya")}</p>
+                    <p className="text-xs text-muted-foreground">{t("settings.usage.mayaDescription")}</p>
                   </div>
                 </div>
                 <Badge variant="outline">
-                  {usage?.maya.used ?? 18} / {usage?.maya.limit ?? 60} Post
+                  {usage?.maya.used ?? 18} / {usage?.maya.limit ?? 60} {t("settings.usage.mayaUnit")}
                 </Badge>
               </div>
               <Progress
@@ -271,11 +284,11 @@ export function SettingsPage() {
                     <BarChart3 className="h-4 w-4" />
                   </div>
                   <div>
-                    <p className="font-semibold text-sm">Echo (Analytics)</p>
-                    <p className="text-xs text-muted-foreground">Monitoring Insights</p>
+                    <p className="font-semibold text-sm">{t("settings.usage.echo")}</p>
+                    <p className="text-xs text-muted-foreground">{t("settings.usage.echoDescription")}</p>
                   </div>
                 </div>
-                <Badge variant="secondary" className="text-xs">Unlimited</Badge>
+                <Badge variant="secondary" className="text-xs">{t("settings.usage.echoUnlimited")}</Badge>
               </div>
               <Progress value={100} className="h-2 bg-muted" />
             </div>
@@ -288,12 +301,12 @@ export function SettingsPage() {
                     <MessageSquare className="h-4 w-4" />
                   </div>
                   <div>
-                    <p className="font-semibold text-sm">Kai (WhatsApp SDR)</p>
-                    <p className="text-xs text-muted-foreground">Pesan Chatbot & Broadcast</p>
+                    <p className="font-semibold text-sm">{t("settings.usage.kai")}</p>
+                    <p className="text-xs text-muted-foreground">{t("settings.usage.kaiDescription")}</p>
                   </div>
                 </div>
                 <Badge variant="outline">
-                  {usage?.kai.used ?? 260} / {usage?.kai.limit ?? 1000} Pesan
+                  {usage?.kai.used ?? 260} / {usage?.kai.limit ?? 1000} {t("settings.usage.kaiUnit")}
                 </Badge>
               </div>
               <Progress
@@ -310,10 +323,10 @@ export function SettingsPage() {
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
             <Globe className="h-5 w-5 text-primary" />
-            Koneksi Platform Terhubung
+            {t("settings.connections.title")}
           </CardTitle>
           <CardDescription>
-            Ringkasan saluran media sosial dan WhatsApp terhubung
+            {t("settings.connections.description")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -323,13 +336,13 @@ export function SettingsPage() {
                 IG/TT
               </div>
               <div>
-                <p className="font-medium text-sm">Maya — Social Media Accounts</p>
-                <p className="text-xs text-muted-foreground">Instagram (@tokomajujaya) & TikTok connected</p>
+                <p className="font-medium text-sm">{t("settings.connections.maya")}</p>
+                <p className="text-xs text-muted-foreground">{t("settings.connections.mayaStatus")}</p>
               </div>
             </div>
             <Button variant="outline" size="sm" asChild>
               <Link to="/maya/connect">
-                Kelola Akun Maya <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
+                {t("settings.connections.mayaManage")} <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
               </Link>
             </Button>
           </div>
@@ -340,13 +353,13 @@ export function SettingsPage() {
                 WA
               </div>
               <div>
-                <p className="font-medium text-sm">Kai — WhatsApp Business API</p>
-                <p className="text-xs text-muted-foreground">Nomor: +62 812-3456-789 (Status: Connected)</p>
+                <p className="font-medium text-sm">{t("settings.connections.kai")}</p>
+                <p className="text-xs text-muted-foreground">{t("settings.connections.kaiStatus")}</p>
               </div>
             </div>
             <Button variant="outline" size="sm" asChild>
               <Link to="/kai/setup">
-                Setup Device Kai <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
+                {t("settings.connections.kaiSetup")} <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
               </Link>
             </Button>
           </div>

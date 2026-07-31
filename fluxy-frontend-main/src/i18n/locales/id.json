@@ -1,0 +1,182 @@
+{
+  "common": {
+    "or": "atau"
+  },
+  "auth": {
+    "login": {
+      "title": "Masuk ke Akun Anda",
+      "subtitle": "Gunakan email dan password untuk masuk",
+      "emailLabel": "Email",
+      "emailPlaceholder": "nama@bisnis.com",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Masukkan password",
+      "submit": "Masuk",
+      "submitting": "Masuk...",
+      "googleButton": "Masuk dengan Google",
+      "noAccount": "Belum punya akun?",
+      "registerLink": "Daftar sekarang",
+      "successToast": "Login berhasil!",
+      "errorToast": "Login gagal. Periksa email dan password.",
+      "validation": {
+        "emailInvalid": "Email tidak valid",
+        "passwordMin": "Password minimal 6 karakter"
+      }
+    },
+    "register": {
+      "title": "Buat Akun Baru",
+      "subtitle": "Daftar untuk memulai menggunakan AI Employees",
+      "nameLabel": "Nama Lengkap",
+      "namePlaceholder": "John Doe",
+      "businessNameLabel": "Nama Bisnis",
+      "businessNamePlaceholder": "Toko Maju Jaya",
+      "industryLabel": "Kategori Industri",
+      "industryPlaceholder": "Pilih kategori industri",
+      "emailLabel": "Email",
+      "emailPlaceholder": "nama@bisnis.com",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Minimal 8 karakter",
+      "passwordConfirmLabel": "Konfirmasi Password",
+      "passwordConfirmPlaceholder": "Ulangi password",
+      "submit": "Daftar",
+      "submitting": "Mendaftar...",
+      "googleButton": "Daftar dengan Google",
+      "hasAccount": "Sudah punya akun?",
+      "loginLink": "Masuk",
+      "successToast": "Registrasi berhasil! Menunggu persetujuan admin.",
+      "errorToast": "Registrasi gagal. Silakan coba lagi.",
+      "industries": {
+        "ecommerce": "E-commerce / Online Shop",
+        "foodBeverage": "Food & Beverage",
+        "fashion": "Fashion & Clothing",
+        "beauty": "Beauty & Skincare",
+        "health": "Health & Wellness",
+        "education": "Education",
+        "realEstate": "Real Estate",
+        "automotive": "Automotive",
+        "technology": "Technology / IT Services",
+        "professionalServices": "Professional Services",
+        "retail": "Retail / Offline Store",
+        "hospitality": "Hospitality & Tourism",
+        "media": "Media & Entertainment",
+        "agriculture": "Agriculture",
+        "manufacturing": "Manufacturing",
+        "other": "Lainnya"
+      },
+      "validation": {
+        "nameMin": "Nama minimal 2 karakter",
+        "emailInvalid": "Email tidak valid",
+        "businessNameMin": "Nama bisnis minimal 2 karakter",
+        "industryRequired": "Pilih kategori industri",
+        "passwordMin": "Password minimal 8 karakter",
+        "passwordMismatch": "Password tidak cocok"
+      }
+    }
+  },
+  "dashboard": {
+    "welcome": "Selamat datang, {{name}}!",
+    "subtitle": "Kelola bisnis Anda dengan AI Employees",
+    "daysLeft": "{{count}} hari lagi",
+    "onboarding": {
+      "badge": "✨ Selamat Datang di Fluxy AI Workspace",
+      "title": "Mulai Otomatisasi Operasional Bisnis Anda",
+      "description": "Fluxy menghubungkan 4 AI Employees (Pixel, Maya, Echo, Kai) untuk membantu pembuatan gambar produk, penjadwalan media sosial, analitik, dan layanan pelanggan WhatsApp secara otomatis.",
+      "tryPixel": "Coba Pixel AI",
+      "connectSocial": "Hubungkan Medsos"
+    },
+    "subscriptionAlert": {
+      "expiredTitle": "Subscription Anda telah berakhir",
+      "inactiveTitle": "Belum ada subscription aktif",
+      "expiredDescription": "Hubungi admin Fluxy untuk memperpanjang langganan Anda.",
+      "inactiveDescription": "Hubungi admin Fluxy untuk mengaktifkan langganan Anda dan mulai menggunakan AI Employees."
+    },
+    "employees": {
+      "title": "AI Employees",
+      "available": "{{count}} tersedia",
+      "pixel": "Desainer Kreatif AI untuk foto produk",
+      "maya": "Manajer & Publisher Media Sosial",
+      "echo": "Analitik Media Sosial",
+      "kai": "Chatbot Sales & Layanan WhatsApp"
+    },
+    "recentActivity": {
+      "title": "Aktivitas Terakhir",
+      "empty": "Belum ada aktivitas",
+      "emptyDescription": "Buat konten pertama Anda menggunakan Maya",
+      "createContent": "Buat Konten",
+      "noCaption": "No caption"
+    },
+    "usage": {
+      "title": "Ringkasan Penggunaan",
+      "thisMonth": "{{unit}} bulan ini",
+      "unit": {
+        "gambar": "gambar",
+        "post": "post",
+        "view": "view",
+        "pesan": "pesan"
+      }
+    }
+  },
+  "settings": {
+    "title": "Pengaturan & Langganan",
+    "subtitle": "Kelola profil bisnis, status langganan, dan pemakaian kuota AI Employees Anda.",
+    "subscription": {
+      "title": "Paket & Status Langganan",
+      "description": "Detail akun langganan dan akses fitur Fluxy Anda",
+      "activePlan": "Paket Aktif",
+      "planName": "Fluxy Pro Tier",
+      "startDate": "Tanggal Mulai",
+      "endDate": "Berlaku Hingga",
+      "defaultStartDate": "1 Juli 2026",
+      "defaultEndDate": "31 Desember 2026",
+      "upgradeTitle": "Ingin Upgrade atau Perpanjang Paket?",
+      "upgradeDescription": "Hubungi tim Admin Fluxy untuk bantuan penyesuaian kuota dan pembayaran.",
+      "contactAdmin": "Hubungi Admin"
+    },
+    "profile": {
+      "title": "Profil Bisnis & Akun",
+      "description": "Perbarui data usaha Anda yang digunakan oleh AI Employees",
+      "ownerName": "Nama Pemilik Akun",
+      "email": "Email",
+      "businessName": "Nama Usaha / Brand",
+      "businessNamePlaceholder": "Contoh: Toko Maju Jaya",
+      "industry": "Kategori Industri",
+      "industryPlaceholder": "Contoh: E-commerce / Fashion",
+      "timezone": "Zona Waktu",
+      "language": "Bahasa Antarmuka (Language)",
+      "languagePlaceholder": "Pilih bahasa",
+      "save": "Simpan Perubahan",
+      "saving": "Menyimpan...",
+      "saveSuccessToast": "Profil bisnis berhasil diperbarui!",
+      "languageChangedToast": "Bahasa diubah ke {{language}}",
+      "languages": {
+        "id": "Bahasa Indonesia",
+        "en": "English"
+      }
+    },
+    "usage": {
+      "title": "Detail Quota Usage AI Employees",
+      "description": "Konsumsi kuota harian/bulanan masing-masing AI Employee Anda",
+      "pixel": "Pixel (AI Designer)",
+      "pixelDescription": "Generasi Gambar AI",
+      "pixelUnit": "Gambar",
+      "maya": "Maya (Social Media)",
+      "mayaDescription": "Jadwal & Publish Post",
+      "mayaUnit": "Post",
+      "echo": "Echo (Analytics)",
+      "echoDescription": "Monitoring Insights",
+      "echoUnlimited": "Unlimited",
+      "kai": "Kai (WhatsApp SDR)",
+      "kaiDescription": "Pesan Chatbot & Broadcast",
+      "kaiUnit": "Pesan"
+    },
+    "connections": {
+      "title": "Koneksi Platform Terhubung",
+      "description": "Ringkasan saluran media sosial dan WhatsApp terhubung",
+      "maya": "Maya — Social Media Accounts",
+      "mayaStatus": "Instagram (@tokomajujaya) & TikTok connected",
+      "mayaManage": "Kelola Akun Maya",
+      "kai": "Kai — WhatsApp Business API",
+      "kaiStatus": "Nomor: +62 812-3456-789 (Status: Connected)",
+      "kaiSetup": "Setup Device Kai"
+    }
+  }
+}
