@@ -35,6 +35,7 @@ class ModulePresenter
             'type' => $asset->type,
             'path' => $asset->path,
             'url' => $asset->url,
+            'metadata' => $asset->metadata ?? [],
             'created_at' => $asset->created_at->toISOString(),
             'updated_at' => $asset->updated_at->toISOString(),
         ];

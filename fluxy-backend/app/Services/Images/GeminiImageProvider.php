@@ -26,37 +26,34 @@ class GeminiImageProvider implements ImageProvider
     public function generate(
         string $prompt,
         string $contentType,
-        ?string $inputBytes = null,
-        ?string $inputMimeType = null,
+        array $referenceImages = [],
     ): GeneratedImage {
         if ($this->apiKey === '') {
             throw new ImageGenerationException('Gemini API Key is not configured.');
         }
 
-        if (($inputBytes === null) !== ($inputMimeType === null)) {
-            throw new ImageGenerationException('The reference image payload is incomplete.');
-        }
+        $hasReferenceImages = $referenceImages !== [];
 
-        $parts = [[
+        $imageParts = array_map(fn (array $image): array => [
+            'inlineData' => [
+                'mimeType' => $image['mimeType'],
+                'data' => base64_encode($image['bytes']),
+            ],
+        ], $referenceImages);
+
+        $textPart = [
             'text' => implode(' ', [
                 'You are Pixel, an expert commercial product photographer and visual designer.',
                 'Create only the final image requested below.',
-                $inputBytes !== null
-                    ? 'Use the supplied reference image as the product identity; preserve its recognizable shape, branding, and key details.'
-                    : 'Create the product scene from the description.',
+                $hasReferenceImages
+                    ? 'Use the supplied reference image(s) as the visual identity; preserve recognizable shapes, branding, and key details unless the instruction says otherwise.'
+                    : 'Create the scene from the description.',
                 'Do not add watermarks or unrequested text.',
                 'Creative brief: '.$prompt,
             ]),
-        ]];
+        ];
 
-        if ($inputBytes !== null && $inputMimeType !== null) {
-            array_unshift($parts, [
-                'inlineData' => [
-                    'mimeType' => $inputMimeType,
-                    'data' => base64_encode($inputBytes),
-                ],
-            ]);
-        }
+        $parts = [...$imageParts, $textPart];
 
         $endpoint = sprintf(
             'https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent',
@@ -119,7 +116,8 @@ class GeminiImageProvider implements ImageProvider
             return new GeneratedImage($bytes, $mimeType, $extension, [
                 'model' => $this->model,
                 'provider' => 'gemini',
-                'used_reference_image' => $inputBytes !== null,
+                'used_reference_image' => $hasReferenceImages,
+                'reference_image_count' => count($referenceImages),
             ]);
         }
 

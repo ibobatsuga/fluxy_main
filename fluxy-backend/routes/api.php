@@ -45,6 +45,7 @@ Route::prefix('v1')->group(function () {
         Route::middleware('approved')->group(function () {
             Route::get('usage/summary', UsageController::class);
 
+            Route::get('ai/features', [PixelController::class, 'features']);
             Route::post('ai/generate-image', [PixelController::class, 'generate'])->middleware(['subscribed', 'throttle:10,1']);
             Route::post('ai/generate-caption', [PixelController::class, 'caption'])->middleware(['subscribed', 'throttle:30,1']);
             Route::get('media', [PixelController::class, 'media']);

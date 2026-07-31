@@ -20,7 +20,7 @@ return [
         'gemini' => [
             'api_key' => env('GEMINI_API_KEY', ''),
             'model' => env('GEMINI_MODEL', 'gemini-3.1-flash-image'),
-            'text_model' => env('GEMINI_TEXT_MODEL', 'gemini-2.5-flash'),
+            'text_model' => env('GEMINI_TEXT_MODEL', 'gemini-flash-latest'),
         ],
         'cloudflare' => [
             'account_id' => env('CLOUDFLARE_ACCOUNT_ID', ''),

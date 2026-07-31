@@ -8,10 +8,12 @@ interface ImageProvider
 {
     public function name(): string;
 
+    /**
+     * @param  list<array{bytes: string, mimeType: string}>  $referenceImages
+     */
     public function generate(
         string $prompt,
         string $contentType,
-        ?string $inputBytes = null,
-        ?string $inputMimeType = null,
+        array $referenceImages = [],
     ): GeneratedImage;
 }

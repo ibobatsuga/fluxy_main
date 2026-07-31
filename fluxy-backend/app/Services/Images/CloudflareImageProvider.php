@@ -28,8 +28,7 @@ class CloudflareImageProvider implements ImageProvider
     public function generate(
         string $prompt,
         string $contentType,
-        ?string $inputBytes = null,
-        ?string $inputMimeType = null,
+        array $referenceImages = [],
     ): GeneratedImage {
         if ($this->accountId === '' || $this->token === '') {
             throw new ImageGenerationException('Cloudflare Workers AI is not configured.');

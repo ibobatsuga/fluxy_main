@@ -1,13 +1,27 @@
 import api from "@/lib/axios";
 
+export interface PixelFeature {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  multi_image: boolean;
+  requires_image: boolean;
+  requires_prompt: boolean;
+  text_output: boolean;
+}
+
 export interface GenerateImageRequest {
+  feature: string;
   content_type: "feed" | "story";
-  input_type: "upload" | "gdrive";
-  image_file?: File;
+  instruction?: string;
+  image_files?: File[];
   gdrive_link?: string;
-  lighting?: string;
-  background?: string;
-  style?: string;
+}
+
+export interface GenerateImageResult {
+  message: string;
+  data?: (MediaItem & { type: Exclude<MediaItem["type"], "video"> }) | { type: "text"; text: string; generation_id: string };
 }
 
 export interface GenerateCaptionRequest {
@@ -24,6 +38,7 @@ export interface MediaItem {
   type: "image" | "video" | "generated_image";
   path: string;
   url: string;
+  metadata?: Record<string, unknown>;
   created_at: string;
   updated_at: string;
 }
@@ -39,20 +54,23 @@ export interface ContentItem {
 }
 
 export const pixelApi = {
-  generateImage: async (data: GenerateImageRequest): Promise<{ message: string }> => {
-    const formData = new FormData();
-    formData.append("content_type", data.content_type);
-    formData.append("input_type", data.input_type);
+  listFeatures: async (): Promise<PixelFeature[]> => {
+    const res = await api.get<{ data: PixelFeature[] }>("/v1/ai/features");
+    return res.data.data;
+  },
 
-    if (data.input_type === "upload" && data.image_file) {
-      formData.append("image_file", data.image_file);
+  generateImage: async (data: GenerateImageRequest): Promise<GenerateImageResult> => {
+    const formData = new FormData();
+    formData.append("feature", data.feature);
+    formData.append("content_type", data.content_type);
+
+    if (data.instruction) formData.append("instruction", data.instruction);
+    if (data.image_files) {
+      for (const file of data.image_files) {
+        formData.append("image_files[]", file);
+      }
     }
-    if (data.input_type === "gdrive" && data.gdrive_link) {
-      formData.append("gdrive_link", data.gdrive_link);
-    }
-    if (data.lighting) formData.append("lighting", data.lighting);
-    if (data.background) formData.append("background", data.background);
-    if (data.style) formData.append("style", data.style);
+    if (data.gdrive_link) formData.append("gdrive_link", data.gdrive_link);
 
     const res = await api.post("/v1/ai/generate-image", formData, {
       headers: { "Content-Type": "multipart/form-data" },

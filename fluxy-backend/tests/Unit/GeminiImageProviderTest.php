@@ -24,7 +24,9 @@ class GeminiImageProviderTest extends TestCase
         ]);
 
         $provider = new GeminiImageProvider('test-key', 'gemini-3.1-flash-image');
-        $image = $provider->generate('Premium product on a marble table', 'story', $png, 'image/png');
+        $image = $provider->generate('Premium product on a marble table', 'story', [
+            ['bytes' => $png, 'mimeType' => 'image/png'],
+        ]);
 
         $this->assertSame($png, $image->bytes);
         $this->assertSame('image/png', $image->mimeType);

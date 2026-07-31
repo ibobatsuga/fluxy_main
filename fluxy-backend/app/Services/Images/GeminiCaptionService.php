@@ -54,4 +54,48 @@ class GeminiCaptionService
 
         return $text;
     }
+
+    public function describeImage(string $bytes, string $mimeType, string $instruction): string
+    {
+        $storedKey = PlatformCredential::query()->where('key', 'ai_image_api_key')->first()?->value;
+        $apiKey = (string) ($storedKey ?: config('services.pixel.gemini.api_key'));
+        $model = (string) config('services.pixel.gemini.text_model', 'gemini-2.5-flash');
+        if ($apiKey === '') {
+            throw new ImageGenerationException('Gemini API Key is not configured.');
+        }
+
+        try {
+            $response = Http::asJson()
+                ->acceptJson()
+                ->withHeaders(['X-goog-api-key' => $apiKey])
+                ->connectTimeout(10)
+                ->timeout(45)
+                ->post(sprintf(
+                    'https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent',
+                    rawurlencode($model),
+                ), [
+                    'contents' => [['parts' => [
+                        ['inlineData' => ['mimeType' => $mimeType, 'data' => base64_encode($bytes)]],
+                        ['text' => $instruction],
+                    ]]],
+                    'generationConfig' => [
+                        'temperature' => 0.4,
+                        'maxOutputTokens' => 700,
+                    ],
+                ]);
+        } catch (Throwable $exception) {
+            throw new ImageGenerationException('Gemini vision request could not be reached.', previous: $exception);
+        }
+
+        if ($response->failed()) {
+            throw new ImageGenerationException('Gemini vision request failed with HTTP '.$response->status().'.');
+        }
+
+        $text = trim((string) $response->json('candidates.0.content.parts.0.text', ''));
+        if ($text === '') {
+            throw new ImageGenerationException('Gemini returned no description.');
+        }
+
+        return $text;
+    }
 }

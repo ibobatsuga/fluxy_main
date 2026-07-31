@@ -31,10 +31,10 @@ class ModuleApiTest extends TestCase
         Sanctum::actingAs($user);
 
         $this->postJson('/api/v1/ai/generate-image', [
+            'feature' => 'product-studio',
             'content_type' => 'feed',
-            'input_type' => 'upload',
-            'image_file' => UploadedFile::fake()->image('product.png'),
-            'style' => 'Clean studio lighting',
+            'image_files' => [UploadedFile::fake()->image('product.png')],
+            'instruction' => 'Clean studio lighting',
         ])->assertStatus(202);
 
         $this->getJson('/api/v1/media')->assertOk()
@@ -66,10 +66,10 @@ class ModuleApiTest extends TestCase
         Sanctum::actingAs($user);
 
         $response = $this->postJson('/api/v1/ai/generate-image', [
+            'feature' => 'product-studio',
             'content_type' => 'feed',
-            'input_type' => 'upload',
-            'image_file' => UploadedFile::fake()->image('product.png'),
-            'style' => 'Clean studio lighting',
+            'image_files' => [UploadedFile::fake()->image('product.png')],
+            'instruction' => 'Clean studio lighting',
         ])->assertStatus(202)
             ->assertJsonPath('data.type', 'generated_image');
 
@@ -86,23 +86,119 @@ class ModuleApiTest extends TestCase
         $headers = ['Idempotency-Key' => 'pixel-request-001'];
 
         $this->postJson('/api/v1/ai/generate-image', [
+            'feature' => 'product-studio',
             'content_type' => 'feed',
-            'input_type' => 'upload',
-            'image_file' => UploadedFile::fake()->image('product-a.png'),
-            'style' => 'Clean studio lighting',
+            'image_files' => [UploadedFile::fake()->image('product-a.png')],
+            'instruction' => 'Clean studio lighting',
         ], $headers)->assertStatus(202);
 
         $this->postJson('/api/v1/ai/generate-image', [
+            'feature' => 'product-studio',
             'content_type' => 'feed',
-            'input_type' => 'upload',
-            'image_file' => UploadedFile::fake()->image('product-b.png'),
-            'style' => 'Clean studio lighting',
+            'image_files' => [UploadedFile::fake()->image('product-b.png')],
+            'instruction' => 'Clean studio lighting',
         ], $headers)->assertStatus(202)
             ->assertJsonPath('message', 'Image generation request was already received.')
             ->assertJsonPath('status', 'completed');
 
         $this->assertSame(1, ImageGeneration::query()->count());
         $this->assertSame(2, MediaAsset::query()->count());
+        $this->getJson('/api/v1/usage/summary')->assertJsonPath('data.pixel.used', 1);
+    }
+
+    public function test_pixel_lists_the_ai_tool_catalog(): void
+    {
+        [$user] = $this->activeUser('catalog');
+        Sanctum::actingAs($user);
+
+        $this->getJson('/api/v1/ai/features')->assertOk()
+            ->assertJsonPath('data.0.id', 'image-to-prompt')
+            ->assertJsonFragment(['id' => 'product-studio', 'multi_image' => true])
+            ->assertJsonFragment(['id' => 'face-swap', 'multi_image' => true]);
+    }
+
+    public function test_pixel_generation_accepts_multiple_reference_images_for_multi_image_tools(): void
+    {
+        [$user] = $this->activeUser('multi-image');
+        Sanctum::actingAs($user);
+
+        $response = $this->postJson('/api/v1/ai/generate-image', [
+            'feature' => 'photo-merge',
+            'content_type' => 'feed',
+            'instruction' => 'Combine both product shots into one flat lay.',
+            'image_files' => [
+                UploadedFile::fake()->image('a.png'),
+                UploadedFile::fake()->image('b.png'),
+            ],
+        ])->assertStatus(202);
+
+        $generation = ImageGeneration::firstOrFail();
+        $this->assertSame('photo-merge', $generation->feature);
+        $this->assertSame(3, MediaAsset::query()->count());
+        $response->assertJsonPath('data.type', 'generated_image');
+    }
+
+    public function test_pixel_generation_rejects_multiple_images_for_single_image_tools(): void
+    {
+        [$user] = $this->activeUser('single-image-guard');
+        Sanctum::actingAs($user);
+
+        $this->postJson('/api/v1/ai/generate-image', [
+            'feature' => 'remove-bg',
+            'content_type' => 'feed',
+            'image_files' => [
+                UploadedFile::fake()->image('a.png'),
+                UploadedFile::fake()->image('b.png'),
+            ],
+        ])->assertStatus(422);
+    }
+
+    public function test_pixel_generation_requires_prompt_for_prompt_only_tools(): void
+    {
+        [$user] = $this->activeUser('prompt-required');
+        Sanctum::actingAs($user);
+
+        $this->postJson('/api/v1/ai/generate-image', [
+            'feature' => 'banner',
+            'content_type' => 'feed',
+        ])->assertStatus(422)
+            ->assertJsonPath('message', 'Instruksi wajib diisi untuk tool ini.');
+    }
+
+    public function test_pixel_generation_requires_image_for_image_dependent_tools(): void
+    {
+        [$user] = $this->activeUser('image-required');
+        Sanctum::actingAs($user);
+
+        $this->postJson('/api/v1/ai/generate-image', [
+            'feature' => 'remove-bg',
+            'content_type' => 'feed',
+        ])->assertStatus(422)
+            ->assertJsonPath('message', 'Mohon upload minimal satu gambar referensi.');
+    }
+
+    public function test_pixel_image_to_prompt_returns_a_text_description(): void
+    {
+        Http::fake([
+            'generativelanguage.googleapis.com/*' => Http::response([
+                'candidates' => [[
+                    'content' => ['parts' => [['text' => 'A minimalist product photo of a ceramic mug.']]],
+                ]],
+            ]),
+        ]);
+        config(['services.pixel.gemini.api_key' => 'test-gemini-key']);
+        [$user] = $this->activeUser('image-to-prompt');
+        Sanctum::actingAs($user);
+
+        $response = $this->postJson('/api/v1/ai/generate-image', [
+            'feature' => 'image-to-prompt',
+            'content_type' => 'feed',
+            'image_files' => [UploadedFile::fake()->image('reference.png')],
+        ])->assertStatus(202);
+
+        $response->assertJsonPath('data.type', 'text')
+            ->assertJsonPath('data.text', 'A minimalist product photo of a ceramic mug.');
+        $this->assertSame('completed', ImageGeneration::firstOrFail()->status);
         $this->getJson('/api/v1/usage/summary')->assertJsonPath('data.pixel.used', 1);
     }
 

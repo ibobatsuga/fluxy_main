@@ -10,6 +10,14 @@ export function useGallery() {
   });
 }
 
+export function usePixelFeatures() {
+  return useQuery({
+    queryKey: ["pixel", "features"],
+    queryFn: pixelApi.listFeatures,
+    staleTime: 60 * 60 * 1000,
+  });
+}
+
 export function useContents() {
   return useQuery({
     queryKey: ["pixel", "contents"],
@@ -19,13 +27,16 @@ export function useContents() {
 }
 
 export function useGenerateImage() {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: (data: GenerateImageRequest) => pixelApi.generateImage(data),
     onSuccess: () => {
-      toast.info("Pembuatan gambar dimulai! Anda akan diberitahu saat selesai.");
+      queryClient.invalidateQueries({ queryKey: ["pixel", "gallery"] });
+      queryClient.invalidateQueries({ queryKey: ["usage"] });
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Gagal memulai pembuatan gambar");
+      toast.error(error.message || "Gagal membuat hasil AI");
     },
   });
 }
