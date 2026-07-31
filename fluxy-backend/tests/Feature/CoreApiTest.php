@@ -111,12 +111,14 @@ class CoreApiTest extends TestCase
         Sanctum::actingAs($admin);
 
         $this->putJson('/api/v1/admin/config/limits', [
-            'pixel' => 40, 'maya' => 55, 'kai' => 900, 'motion' => 25,
+            'pixel' => 40, 'maya' => 55, 'kai' => 900, 'motion' => 25, 'luna' => 80,
         ])->assertOk()
-            ->assertJsonPath('data.motion', 25);
+            ->assertJsonPath('data.motion', 25)
+            ->assertJsonPath('data.luna', 80);
 
         $this->getJson('/api/v1/admin/config/limits')->assertOk()
-            ->assertJsonPath('data.motion', 25);
+            ->assertJsonPath('data.motion', 25)
+            ->assertJsonPath('data.luna', 80);
     }
 
     public function test_credentials_are_encrypted_and_masked(): void

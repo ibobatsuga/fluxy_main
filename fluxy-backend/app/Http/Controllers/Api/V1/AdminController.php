@@ -179,6 +179,7 @@ class AdminController extends ApiController
             'maya' => $limits['maya'],
             'kai' => $limits['kai'],
             'motion' => $limits['motion'],
+            'luna' => $limits['luna'],
         ]);
     }
 
@@ -189,6 +190,7 @@ class AdminController extends ApiController
             'maya' => ['required', 'integer', 'min:1', 'max:1000000'],
             'kai' => ['required', 'integer', 'min:1', 'max:10000000'],
             'motion' => ['required', 'integer', 'min:1', 'max:1000000'],
+            'luna' => ['required', 'integer', 'min:1', 'max:1000000'],
         ]);
         $plan = $this->usage->updateDefaultLimits($validated);
         $this->audit->write('limit_change', 'Default usage limits diperbarui.', null, $request->user(), $validated, $request);
@@ -198,6 +200,7 @@ class AdminController extends ApiController
             'maya' => $plan->limits['maya'],
             'kai' => $plan->limits['kai'],
             'motion' => $plan->limits['motion'],
+            'luna' => $plan->limits['luna'],
         ]);
     }
 

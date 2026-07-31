@@ -17,6 +17,7 @@ import {
   RefreshCw,
   Plus,
   Clapperboard,
+  Search,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { id as idLocale, enUS } from "date-fns/locale";
@@ -72,6 +73,15 @@ const aiEmployees = [
     bg: "bg-orange-100",
     border: "border-orange-200",
     to: "/motion",
+  },
+  {
+    name: "Luna",
+    descriptionKey: "dashboard.employees.luna",
+    icon: Search,
+    color: "text-violet-600",
+    bg: "bg-violet-100",
+    border: "border-violet-200",
+    to: "/luna",
   },
 ] as const;
 
@@ -349,6 +359,14 @@ export function DashboardPage() {
             unit={t("dashboard.usage.unit.prompt")}
             icon={Clapperboard}
             color="text-orange-600"
+          />
+          <UsageCard
+            title="Luna"
+            used={usage?.luna.used ?? 0}
+            limit={usage?.luna.limit ?? 100}
+            unit={t("dashboard.usage.unit.lead")}
+            icon={Search}
+            color="text-violet-600"
           />
         </div>
       </section>

@@ -7,6 +7,7 @@ use App\Models\Content;
 use App\Models\ContentMetric;
 use App\Models\ImageGeneration;
 use App\Models\KaiDevice;
+use App\Models\Lead;
 use App\Models\MediaAsset;
 use App\Models\Plan;
 use App\Models\Post;
@@ -273,6 +274,116 @@ class ModuleApiTest extends TestCase
         $this->postJson('/api/v1/motion/generate-prompt', ['product_name' => 'Test'])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['product_description', 'target_market', 'content_type']);
+    }
+
+    public function test_luna_google_maps_search_creates_leads_and_records_usage(): void
+    {
+        Http::fake([
+            'api.apify.com/*' => Http::response([
+                [
+                    'title' => 'Toko Baju Keren',
+                    'phone' => '+6281234567890',
+                    'email' => 'toko@example.com',
+                    'website' => 'https://toko.example.com',
+                    'address' => 'Jl. Sudirman No 1, Jakarta',
+                    'category' => 'Clothing Store',
+                    'rating' => 4.5,
+                ],
+                [
+                    'title' => 'Toko Baju Lain',
+                    'phone' => '+6281234567891',
+                ],
+            ]),
+        ]);
+        config(['services.apify.api_token' => 'test-apify-token']);
+        [$user] = $this->activeUser('luna-maps');
+        Sanctum::actingAs($user);
+
+        $response = $this->postJson('/api/v1/luna/search', [
+            'source' => 'google_maps',
+            'keyword' => 'toko baju',
+            'location' => 'Jakarta Selatan',
+            'max_items' => 10,
+        ])->assertOk();
+
+        $response->assertJsonCount(2, 'data')
+            ->assertJsonPath('data.0.name', 'Toko Baju Keren')
+            ->assertJsonPath('data.0.type', 'business')
+            ->assertJsonPath('data.0.email', 'toko@example.com')
+            ->assertJsonPath('data.0.source', 'google_maps');
+
+        $this->assertSame(2, Lead::query()->count());
+        $this->getJson('/api/v1/usage/summary')->assertJsonPath('data.luna.used', 2);
+
+        Http::assertSent(function (Request $request) {
+            return str_contains($request->url(), 'lurkapi~google-maps-business-leads-scraper')
+                && $request['searchTerms'] === ['toko baju']
+                && $request['location'] === 'Jakarta Selatan';
+        });
+    }
+
+    public function test_luna_linkedin_company_search_creates_person_leads(): void
+    {
+        Http::fake([
+            'api.apify.com/*' => Http::response([
+                [
+                    'name' => 'Budi Santoso',
+                    'headline' => 'Marketing Manager',
+                    'currentPosition' => ['company' => 'Toko Baju Keren', 'title' => 'Marketing Manager'],
+                    'location' => 'Jakarta',
+                    'linkedinUrl' => 'https://linkedin.com/in/budisantoso',
+                ],
+            ]),
+        ]);
+        config(['services.apify.api_token' => 'test-apify-token']);
+        [$user] = $this->activeUser('luna-linkedin');
+        Sanctum::actingAs($user);
+
+        $this->postJson('/api/v1/luna/search', [
+            'source' => 'linkedin_company',
+            'company_urls' => ['https://www.linkedin.com/company/toko-baju-keren'],
+            'job_title' => 'Marketing Manager',
+            'max_items' => 10,
+        ])->assertOk()
+            ->assertJsonPath('data.0.name', 'Budi Santoso')
+            ->assertJsonPath('data.0.type', 'person')
+            ->assertJsonPath('data.0.company', 'Toko Baju Keren')
+            ->assertJsonPath('data.0.linkedin_url', 'https://linkedin.com/in/budisantoso');
+    }
+
+    public function test_luna_search_requires_source_specific_fields(): void
+    {
+        [$user] = $this->activeUser('luna-validation');
+        Sanctum::actingAs($user);
+
+        $this->postJson('/api/v1/luna/search', ['source' => 'google_maps'])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['keyword', 'location']);
+
+        $this->postJson('/api/v1/luna/search', ['source' => 'linkedin_company'])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['company_urls']);
+    }
+
+    public function test_luna_can_list_and_delete_leads_with_tenant_isolation(): void
+    {
+        [$userA] = $this->activeUser('luna-owner');
+        [$userB] = $this->activeUser('luna-other');
+
+        Sanctum::actingAs($userA);
+        Lead::create([
+            'tenant_id' => $userA->currentTenant->id, 'user_id' => $userA->id,
+            'source' => 'google_maps', 'type' => 'business', 'name' => 'Toko A',
+        ]);
+        $this->getJson('/api/v1/luna/leads')->assertOk()->assertJsonCount(1, 'data');
+
+        $leadId = Lead::first()->id;
+        Sanctum::actingAs($userB);
+        $this->deleteJson("/api/v1/luna/leads/{$leadId}")->assertNotFound();
+
+        Sanctum::actingAs($userA);
+        $this->deleteJson("/api/v1/luna/leads/{$leadId}")->assertOk();
+        $this->assertSame(0, Lead::query()->count());
     }
 
     public function test_maya_can_connect_and_publish_with_frontend_contract(): void

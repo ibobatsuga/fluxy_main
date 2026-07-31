@@ -169,6 +169,41 @@ export function setupMock(api: AxiosInstance): MockAdapter {
     }];
   });
 
+  // POST /v1/luna/search
+  let mockLeads: Array<Record<string, unknown>> = [];
+  mock.onPost("/v1/luna/search").reply((config) => {
+    const body = JSON.parse(config.data || "{}");
+    const isBusiness = body.source === "google_maps";
+    const newLeads = Array.from({ length: 3 }).map((_, i) => ({
+      id: generateId(),
+      source: body.source,
+      type: isBusiness ? "business" : "person",
+      name: isBusiness ? `Toko Contoh ${i + 1}` : `Kontak Contoh ${i + 1}`,
+      company: isBusiness ? null : "Perusahaan Contoh",
+      title: isBusiness ? null : "Marketing Manager",
+      phone: isBusiness ? "+62812345678" + i : null,
+      email: `contoh${i + 1}@example.com`,
+      website: isBusiness ? "https://example.com" : null,
+      address: isBusiness ? body.location ?? "Jakarta" : null,
+      category: isBusiness ? body.keyword ?? "Bisnis" : null,
+      rating: isBusiness ? 4.5 : null,
+      linkedin_url: isBusiness ? null : "https://linkedin.com/in/contoh",
+      created_at: new Date(0).toISOString(),
+    }));
+    mockLeads = [...newLeads, ...mockLeads];
+    return [200, { data: newLeads }];
+  });
+
+  // GET /v1/luna/leads
+  mock.onGet("/v1/luna/leads").reply(() => [200, { data: mockLeads, meta: { total: mockLeads.length } }]);
+
+  // DELETE /v1/luna/leads/:id
+  mock.onDelete(/\/v1\/luna\/leads\/([^/]+)/).reply((config) => {
+    const id = config.url?.split("/").pop() || "";
+    mockLeads = mockLeads.filter((lead) => lead.id !== id);
+    return [200, { message: "Lead deleted." }];
+  });
+
   // POST /v1/media/upload
   mock.onPost("/v1/media/upload").reply(() => {
     const seed = generateId();
@@ -245,6 +280,7 @@ export function setupMock(api: AxiosInstance): MockAdapter {
         echo: { used: 84, limit: -1 },
         kai: { used: 260, limit: mockLimits.kai },
         motion: { used: 4, limit: mockLimits.motion },
+        luna: { used: 6, limit: mockLimits.luna },
       },
     }];
   });

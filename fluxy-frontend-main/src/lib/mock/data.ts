@@ -614,6 +614,7 @@ export const mockDefaultLimits: DefaultLimits = {
   maya: 60,
   kai: 1000,
   motion: 30,
+  luna: 100,
 };
 
 export const mockKaiDeviceRequests: KaiDevice[] = [

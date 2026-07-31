@@ -18,6 +18,7 @@ import {
   Save,
   Languages,
   Clapperboard,
+  Search,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -334,6 +335,28 @@ export function SettingsPage() {
               </div>
               <Progress
                 value={(((usage?.motion.used ?? 4) / (usage?.motion.limit ?? 30)) * 100)}
+                className="h-2"
+              />
+            </div>
+
+            {/* Luna */}
+            <div className="rounded-lg border p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-md bg-violet-500/10 text-violet-500">
+                    <Search className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm">{t("settings.usage.luna")}</p>
+                    <p className="text-xs text-muted-foreground">{t("settings.usage.lunaDescription")}</p>
+                  </div>
+                </div>
+                <Badge variant="outline">
+                  {usage?.luna.used ?? 6} / {usage?.luna.limit ?? 100} {t("settings.usage.lunaUnit")}
+                </Badge>
+              </div>
+              <Progress
+                value={(((usage?.luna.used ?? 6) / (usage?.luna.limit ?? 100)) * 100)}
                 className="h-2"
               />
             </div>

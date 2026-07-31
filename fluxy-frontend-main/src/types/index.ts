@@ -211,6 +211,7 @@ export interface UsageSummary {
   echo: { used: number; limit: number };
   kai: { used: number; limit: number };
   motion: { used: number; limit: number };
+  luna: { used: number; limit: number };
 }
 
 export interface DefaultLimits {
@@ -218,6 +219,7 @@ export interface DefaultLimits {
   maya: number;
   kai: number;
   motion: number;
+  luna: number;
 }
 
 export interface PlatformCredentials {

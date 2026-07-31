@@ -15,6 +15,7 @@ export function LimitsForm() {
   const [maya, setMaya] = useState(60);
   const [kai, setKai] = useState(1000);
   const [motion, setMotion] = useState(30);
+  const [luna, setLuna] = useState(100);
 
   useEffect(() => {
     if (limits) {
@@ -22,6 +23,7 @@ export function LimitsForm() {
       setMaya(limits.maya);
       setKai(limits.kai);
       setMotion(limits.motion);
+      setLuna(limits.luna);
     }
   }, [limits]);
 
@@ -103,10 +105,22 @@ export function LimitsForm() {
               onChange={(e) => setMotion(Number(e.target.value))}
             />
           </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="limit-luna" className="text-xs">
+              Luna (leads/bulan)
+            </Label>
+            <Input
+              id="limit-luna"
+              type="number"
+              min={0}
+              value={luna}
+              onChange={(e) => setLuna(Number(e.target.value))}
+            />
+          </div>
         </div>
         <Button
           size="sm"
-          onClick={() => updateLimits.mutate({ pixel, maya, kai, motion })}
+          onClick={() => updateLimits.mutate({ pixel, maya, kai, motion, luna })}
           disabled={updateLimits.isPending}
         >
           {updateLimits.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}

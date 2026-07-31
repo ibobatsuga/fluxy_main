@@ -24,6 +24,7 @@ import mayaAvatar from "@/assets/Agent-HeroIcon/Maya.webp";
 import echoAvatar from "@/assets/Agent-HeroIcon/Echo.webp";
 import kaiAvatar from "@/assets/Agent-HeroIcon/Kai.webp";
 import motionAvatar from "@/assets/Agent-HeroIcon/Cody.webp";
+import lunaAvatar from "@/assets/Agent-HeroIcon/Luna.webp";
 
 interface NavItem {
   to: string;
@@ -43,6 +44,7 @@ const navItems: NavItem[] = [
   { to: "/echo", label: "Echo", subtitle: "Analytics", icon: MessageSquare, avatar: echoAvatar, avatarBg: "bg-amber-500", matchPattern: "/echo" },
   { to: "/kai", label: "Kai", subtitle: "Chatbot", icon: MessageSquare, avatar: kaiAvatar, avatarBg: "bg-teal-500", matchPattern: "/kai" },
   { to: "/motion", label: "Motion", subtitle: "Video Ads", icon: MessageSquare, avatar: motionAvatar, avatarBg: "bg-orange-500", matchPattern: "/motion" },
+  { to: "/luna", label: "Luna", subtitle: "Lead Gen", icon: MessageSquare, avatar: lunaAvatar, avatarBg: "bg-violet-600", matchPattern: "/luna" },
 ];
 
 const adminItems: NavItem[] = [

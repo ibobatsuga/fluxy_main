@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\KaiAdminController;
 use App\Http\Controllers\Api\V1\KaiController;
 use App\Http\Controllers\Api\V1\MayaController;
 use App\Http\Controllers\Api\V1\MetaAdminController;
+use App\Http\Controllers\Api\V1\LunaController;
 use App\Http\Controllers\Api\V1\MetaWebhookController;
 use App\Http\Controllers\Api\V1\MotionController;
 use App\Http\Controllers\Api\V1\NotificationController;
@@ -57,6 +58,11 @@ Route::prefix('v1')->group(function () {
             Route::delete('contents/{content}', [PixelController::class, 'deleteContent'])->middleware('subscribed');
 
             Route::post('motion/generate-prompt', [MotionController::class, 'generate'])->middleware(['subscribed', 'throttle:10,1']);
+
+            Route::get('luna/leads', [LunaController::class, 'index']);
+            Route::get('luna/leads/export', [LunaController::class, 'export']);
+            Route::post('luna/search', [LunaController::class, 'search'])->middleware(['subscribed', 'throttle:10,1']);
+            Route::delete('luna/leads/{lead}', [LunaController::class, 'destroy'])->middleware('subscribed');
 
             Route::get('accounts', [MayaController::class, 'accounts']);
             Route::get('accounts/health', [MayaController::class, 'health']);

@@ -36,6 +36,10 @@ return [
         'gateway_webhook_secret' => env('KAI_GATEWAY_WEBHOOK_SECRET', ''),
     ],
 
+    'apify' => [
+        'api_token' => env('APIFY_API_TOKEN', ''),
+    ],
+
     'google' => [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),

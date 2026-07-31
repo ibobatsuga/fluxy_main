@@ -27,6 +27,9 @@ const PixelPage = lazy(() =>
 const MotionPage = lazy(() =>
   import("@/pages/motion/motion-page").then((m) => ({ default: m.MotionPage }))
 );
+const LunaPage = lazy(() =>
+  import("@/pages/luna/luna-page").then((m) => ({ default: m.LunaPage }))
+);
 const MayaConnectPage = lazy(() =>
   import("@/pages/maya/connect-page").then((m) => ({ default: m.MayaConnectPage }))
 );
@@ -133,6 +136,16 @@ export default function App() {
                 element={
                   <Suspense fallback={<PageLoader />}>
                     <MotionPage />
+                  </Suspense>
+                }
+              />
+
+              {/* Luna */}
+              <Route
+                path="/luna"
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <LunaPage />
                   </Suspense>
                 }
               />
