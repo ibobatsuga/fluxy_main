@@ -95,6 +95,15 @@ sudo chmod -R u=rwX,g=rwX,o=rX \
 sudo chown root:www-data "${BACKEND_ROOT}/.env"
 sudo chmod 640 "${BACKEND_ROOT}/.env"
 
+cat <<'SECURITY_HEADERS' | sudo tee /etc/nginx/snippets/fluxy-security.conf >/dev/null
+add_header X-Frame-Options "SAMEORIGIN" always;
+add_header X-Content-Type-Options "nosniff" always;
+add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+add_header Content-Security-Policy "default-src 'self'; base-uri 'self'; frame-ancestors 'self'; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self'; form-action 'self'; upgrade-insecure-requests" always;
+add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+SECURITY_HEADERS
+
 cat <<'NGINX' | sudo tee /etc/nginx/sites-available/fluxy >/dev/null
 server {
     listen 80;
@@ -113,10 +122,12 @@ server {
         try_files $uri =404;
         expires 1y;
         add_header Cache-Control "public, immutable";
+        include snippets/fluxy-security.conf;
     }
 
     location = /index.html {
         add_header Cache-Control "no-cache";
+        include snippets/fluxy-security.conf;
     }
 
     location ^~ /api/ {
@@ -129,6 +140,7 @@ server {
 
     location / {
         try_files $uri $uri/ /index.html;
+        include snippets/fluxy-security.conf;
     }
 
     location ~ \.php$ {
