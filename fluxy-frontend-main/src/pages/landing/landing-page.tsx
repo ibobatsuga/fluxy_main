@@ -105,7 +105,7 @@ const employees: {
 }[] = [
   {
     name: "Luna",
-    role: "Lead Generation Specialist",
+    role: "Temukan dan kumpulkan prospek potensial Anda",
     desc: "Luna bertugas menemukan calon pelanggan yang relevan untuk bisnis Anda.",
     img: lunaImg,
     icon: Search,
@@ -115,7 +115,6 @@ const employees: {
       "Mengumpulkan data bisnis",
       "Prospect research",
       "Lead qualification",
-      "CRM data enrichment",
     ],
     fitFor: ["B2B Sales", "Agency", "SaaS", "Property", "Consultant"],
   },
@@ -217,7 +216,7 @@ const employees: {
   },
   {
     name: "Motion",
-    role: "Content Production Specialist",
+    role: "Buat berbagai format konten kreatif Anda",
     desc: "Motion menghasilkan ide dan aset untuk kebutuhan konten harian.",
     img: codyImg,
     icon: Film,

@@ -84,7 +84,7 @@ export function LunaPage() {
           <AgentAvatar img={lunaAvatar} name="Luna" bgClassName="bg-violet-600" size="h-11 w-11" />
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Luna</h1>
-            <p className="text-sm text-muted-foreground">Lead Generation Specialist</p>
+            <p className="text-sm text-muted-foreground">Temukan dan kumpulkan prospek potensial Anda</p>
           </div>
         </div>
         <Badge variant="secondary" className="hidden gap-1 sm:flex">

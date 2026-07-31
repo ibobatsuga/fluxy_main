@@ -104,7 +104,7 @@ export function MayaCreatePage() {
       <div className="flex items-center gap-3">
         <AgentAvatar img={mayaAvatar} name="Maya" bgClassName="bg-blue-600" size="h-11 w-11" />
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Jadwalkan Konten</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Maya</h1>
           <p className="text-sm text-muted-foreground">
             Susun konten dan jadwalkan publikasi ke media sosial Anda
           </p>

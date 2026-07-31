@@ -88,9 +88,9 @@ function CatalogView({
         <div className="flex items-center gap-3">
           <AgentAvatar img={pixelAvatar} name="Pixel" bgClassName="bg-blue-600" size="h-11 w-11" />
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Pixel Studio</h1>
+            <h1 className="text-2xl font-bold tracking-tight">Pixel</h1>
             <p className="text-sm text-muted-foreground">
-              {features.length} AI tools untuk kebutuhan visual bisnis Anda
+              AI tools untuk kebutuhan visual bisnis Anda
             </p>
           </div>
         </div>

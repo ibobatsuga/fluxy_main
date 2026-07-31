@@ -145,7 +145,7 @@ export function MotionPage() {
           <AgentAvatar img={motionAvatar} name="Motion" bgClassName="bg-orange-500" size="h-11 w-11" />
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Motion</h1>
-            <p className="text-sm text-muted-foreground">Content Production Specialist</p>
+            <p className="text-sm text-muted-foreground">Buat berbagai format konten kreatif Anda</p>
           </div>
         </div>
         <Badge variant="secondary" className="hidden gap-1 sm:flex">
