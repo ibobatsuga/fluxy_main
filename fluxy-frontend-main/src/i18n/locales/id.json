@@ -79,7 +79,7 @@
     "onboarding": {
       "badge": "✨ Selamat Datang di Fluxy AI Workspace",
       "title": "Mulai Otomatisasi Operasional Bisnis Anda",
-      "description": "Fluxy menghubungkan 4 AI Employees (Pixel, Maya, Echo, Kai) untuk membantu pembuatan gambar produk, penjadwalan media sosial, analitik, dan layanan pelanggan WhatsApp secara otomatis.",
+      "description": "Fluxy menghubungkan 5 AI Employees (Pixel, Maya, Echo, Kai, Motion) untuk membantu pembuatan gambar produk, penjadwalan media sosial, analitik, layanan pelanggan WhatsApp, dan pembuatan prompt video iklan secara otomatis.",
       "tryPixel": "Coba Pixel AI",
       "connectSocial": "Hubungkan Medsos"
     },
@@ -95,7 +95,8 @@
       "pixel": "Desainer Kreatif AI untuk foto produk",
       "maya": "Manajer & Publisher Media Sosial",
       "echo": "Analitik Media Sosial",
-      "kai": "Chatbot Sales & Layanan WhatsApp"
+      "kai": "Chatbot Sales & Layanan WhatsApp",
+      "motion": "Content Production Specialist untuk brief & prompt video iklan"
     },
     "recentActivity": {
       "title": "Aktivitas Terakhir",
@@ -111,7 +112,8 @@
         "gambar": "gambar",
         "post": "post",
         "view": "view",
-        "pesan": "pesan"
+        "pesan": "pesan",
+        "prompt": "prompt"
       }
     }
   },
@@ -166,7 +168,10 @@
       "echoUnlimited": "Unlimited",
       "kai": "Kai (WhatsApp SDR)",
       "kaiDescription": "Pesan Chatbot & Broadcast",
-      "kaiUnit": "Pesan"
+      "kaiUnit": "Pesan",
+      "motion": "Motion (Content Production)",
+      "motionDescription": "Brief & Prompt Video Iklan",
+      "motionUnit": "Prompt"
     },
     "connections": {
       "title": "Koneksi Platform Terhubung",

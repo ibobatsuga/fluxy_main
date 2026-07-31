@@ -16,6 +16,7 @@ import {
   XCircle,
   RefreshCw,
   Plus,
+  Clapperboard,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { id as idLocale, enUS } from "date-fns/locale";
@@ -62,6 +63,15 @@ const aiEmployees = [
     bg: "bg-teal-100",
     border: "border-teal-200",
     to: "/kai",
+  },
+  {
+    name: "Motion",
+    descriptionKey: "dashboard.employees.motion",
+    icon: Clapperboard,
+    color: "text-orange-600",
+    bg: "bg-orange-100",
+    border: "border-orange-200",
+    to: "/motion",
   },
 ] as const;
 
@@ -331,6 +341,14 @@ export function DashboardPage() {
             unit={t("dashboard.usage.unit.pesan")}
             icon={MessageSquare}
             color="text-teal-600"
+          />
+          <UsageCard
+            title="Motion"
+            used={usage?.motion.used ?? 0}
+            limit={usage?.motion.limit ?? 30}
+            unit={t("dashboard.usage.unit.prompt")}
+            icon={Clapperboard}
+            color="text-orange-600"
           />
         </div>
       </section>

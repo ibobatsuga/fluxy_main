@@ -14,12 +14,14 @@ export function LimitsForm() {
   const [pixel, setPixel] = useState(50);
   const [maya, setMaya] = useState(60);
   const [kai, setKai] = useState(1000);
+  const [motion, setMotion] = useState(30);
 
   useEffect(() => {
     if (limits) {
       setPixel(limits.pixel);
       setMaya(limits.maya);
       setKai(limits.kai);
+      setMotion(limits.motion);
     }
   }, [limits]);
 
@@ -89,10 +91,22 @@ export function LimitsForm() {
               onChange={(e) => setKai(Number(e.target.value))}
             />
           </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="limit-motion" className="text-xs">
+              Motion (prompt/bulan)
+            </Label>
+            <Input
+              id="limit-motion"
+              type="number"
+              min={0}
+              value={motion}
+              onChange={(e) => setMotion(Number(e.target.value))}
+            />
+          </div>
         </div>
         <Button
           size="sm"
-          onClick={() => updateLimits.mutate({ pixel, maya, kai })}
+          onClick={() => updateLimits.mutate({ pixel, maya, kai, motion })}
           disabled={updateLimits.isPending}
         >
           {updateLimits.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}

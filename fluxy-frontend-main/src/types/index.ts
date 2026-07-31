@@ -210,12 +210,14 @@ export interface UsageSummary {
   maya: { used: number; limit: number };
   echo: { used: number; limit: number };
   kai: { used: number; limit: number };
+  motion: { used: number; limit: number };
 }
 
 export interface DefaultLimits {
   pixel: number;
   maya: number;
   kai: number;
+  motion: number;
 }
 
 export interface PlatformCredentials {

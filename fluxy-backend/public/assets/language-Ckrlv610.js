@@ -1,0 +1,1 @@
+import{_ as e,v as t}from"./card-CIHQ7KU1.js";import{pt as n}from"./index-Df3kzxw9.js";var r=t()(e(e=>({language:n.language||`id`,setLanguage:t=>{n.changeLanguage(t),e({language:t})}}),{name:`fluxy-language`}));export{r as t};

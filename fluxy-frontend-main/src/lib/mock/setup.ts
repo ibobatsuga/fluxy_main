@@ -160,6 +160,15 @@ export function setupMock(api: AxiosInstance): MockAdapter {
     }];
   });
 
+  // POST /v1/motion/generate-prompt
+  mock.onPost("/v1/motion/generate-prompt").reply(() => {
+    return [200, {
+      data: {
+        text: "Concept: Produk ditampilkan dengan pencahayaan cinematic yang premium.\n\nHook: \"Kulit kusam bikin kurang percaya diri?\"\n\nScene 1 (0-3s): Close-up produk berputar perlahan dengan efek kamera sinematik.\nScene 2 (3-6s): Model mengaplikasikan produk, ekspresi puas.\nScene 3 (6-8s): Logo dan CTA muncul dengan transisi halus.\n\nVisual Style: Cinematic color grading, warm tone, vertical 9:16.\n\nAudio: Musik upbeat & energetic, voice over singkat dan jelas.\n\nCall To Action: \"Order sekarang, stok terbatas!\"",
+      },
+    }];
+  });
+
   // POST /v1/media/upload
   mock.onPost("/v1/media/upload").reply(() => {
     const seed = generateId();
@@ -235,6 +244,7 @@ export function setupMock(api: AxiosInstance): MockAdapter {
         maya: { used: 18, limit: mockLimits.maya },
         echo: { used: 84, limit: -1 },
         kai: { used: 260, limit: mockLimits.kai },
+        motion: { used: 4, limit: mockLimits.motion },
       },
     }];
   });

@@ -613,6 +613,7 @@ export const mockDefaultLimits: DefaultLimits = {
   pixel: 50,
   maya: 60,
   kai: 1000,
+  motion: 30,
 };
 
 export const mockKaiDeviceRequests: KaiDevice[] = [

@@ -105,6 +105,20 @@ class CoreApiTest extends TestCase
         $usage->record($tenant, 'pixel', 'generate', 1, 'different-operation');
     }
 
+    public function test_admin_can_update_default_usage_limits_including_motion(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        Sanctum::actingAs($admin);
+
+        $this->putJson('/api/v1/admin/config/limits', [
+            'pixel' => 40, 'maya' => 55, 'kai' => 900, 'motion' => 25,
+        ])->assertOk()
+            ->assertJsonPath('data.motion', 25);
+
+        $this->getJson('/api/v1/admin/config/limits')->assertOk()
+            ->assertJsonPath('data.motion', 25);
+    }
+
     public function test_credentials_are_encrypted_and_masked(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);

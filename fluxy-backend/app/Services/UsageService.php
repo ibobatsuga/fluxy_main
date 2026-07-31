@@ -16,6 +16,7 @@ class UsageService
         'maya' => 60,
         'echo' => -1,
         'kai' => 1000,
+        'motion' => 30,
     ];
 
     public function summary(Tenant $tenant): array

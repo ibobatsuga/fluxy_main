@@ -15,6 +15,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Services\UsageService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
@@ -218,6 +219,60 @@ class ModuleApiTest extends TestCase
         $this->postJson('/api/v1/ai/generate-caption', ['prompt' => 'Peluncuran produk baru'])
             ->assertOk()
             ->assertJsonPath('data.text', 'Produk baru sudah hadir! Belanja sekarang. #ProdukBaru');
+    }
+
+    public function test_motion_generates_a_video_ad_prompt_and_records_usage(): void
+    {
+        Http::fake([
+            'generativelanguage.googleapis.com/*' => Http::response([
+                'candidates' => [[
+                    'content' => ['parts' => [['text' => 'Concept: ... Hook: ... Scene 1: ...']]],
+                ]],
+            ]),
+        ]);
+        config(['services.pixel.gemini.api_key' => 'test-gemini-key']);
+        [$user] = $this->activeUser('motion');
+        Sanctum::actingAs($user);
+
+        $payload = [
+            'product_name' => 'Serum Vitamin C Glow Pro',
+            'product_description' => 'Serum wajah dengan vitamin C untuk kulit glowing',
+            'target_market' => 'Wanita 18-35, kulit kusam',
+            'content_type' => 'TV Commercial',
+            'platform' => 'TikTok',
+            'ad_goal' => 'Penjualan',
+            'language' => 'Bahasa Indonesia',
+            'tone' => 'Premium',
+            'aspect_ratio' => '9:16 Vertical',
+            'color_grading' => 'Cinematic',
+            'character' => 'Ada Karakter',
+            'duration' => '8 detik',
+            'hook_style' => 'Question Hook',
+            'pace_editing' => 'Fast Cut',
+            'text_overlay_animation' => false,
+            'cinematic_camera' => true,
+        ];
+
+        $this->postJson('/api/v1/motion/generate-prompt', $payload)
+            ->assertOk()
+            ->assertJsonPath('data.text', 'Concept: ... Hook: ... Scene 1: ...');
+
+        Http::assertSent(function (Request $request) {
+            return str_contains($request['contents'][0]['parts'][0]['text'], 'Serum Vitamin C Glow Pro')
+                && str_contains($request['contents'][0]['parts'][0]['text'], 'Write the entire output in Bahasa Indonesia');
+        });
+
+        $this->getJson('/api/v1/usage/summary')->assertJsonPath('data.motion.used', 1);
+    }
+
+    public function test_motion_requires_all_mandatory_brief_fields(): void
+    {
+        [$user] = $this->activeUser('motion-validation');
+        Sanctum::actingAs($user);
+
+        $this->postJson('/api/v1/motion/generate-prompt', ['product_name' => 'Test'])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['product_description', 'target_market', 'content_type']);
     }
 
     public function test_maya_can_connect_and_publish_with_frontend_contract(): void

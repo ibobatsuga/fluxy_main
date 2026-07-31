@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\V1\KaiController;
 use App\Http\Controllers\Api\V1\MayaController;
 use App\Http\Controllers\Api\V1\MetaAdminController;
 use App\Http\Controllers\Api\V1\MetaWebhookController;
+use App\Http\Controllers\Api\V1\MotionController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\PixelController;
 use App\Http\Controllers\Api\V1\SettingsController;
@@ -54,6 +55,8 @@ Route::prefix('v1')->group(function () {
             Route::get('contents', [PixelController::class, 'contents']);
             Route::post('contents', [PixelController::class, 'createContent'])->middleware('subscribed');
             Route::delete('contents/{content}', [PixelController::class, 'deleteContent'])->middleware('subscribed');
+
+            Route::post('motion/generate-prompt', [MotionController::class, 'generate'])->middleware(['subscribed', 'throttle:10,1']);
 
             Route::get('accounts', [MayaController::class, 'accounts']);
             Route::get('accounts/health', [MayaController::class, 'health']);

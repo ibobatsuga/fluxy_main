@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   Save,
   Languages,
+  Clapperboard,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -311,6 +312,28 @@ export function SettingsPage() {
               </div>
               <Progress
                 value={(((usage?.kai.used ?? 260) / (usage?.kai.limit ?? 1000)) * 100)}
+                className="h-2"
+              />
+            </div>
+
+            {/* Motion */}
+            <div className="rounded-lg border p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-md bg-orange-500/10 text-orange-500">
+                    <Clapperboard className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm">{t("settings.usage.motion")}</p>
+                    <p className="text-xs text-muted-foreground">{t("settings.usage.motionDescription")}</p>
+                  </div>
+                </div>
+                <Badge variant="outline">
+                  {usage?.motion.used ?? 4} / {usage?.motion.limit ?? 30} {t("settings.usage.motionUnit")}
+                </Badge>
+              </div>
+              <Progress
+                value={(((usage?.motion.used ?? 4) / (usage?.motion.limit ?? 30)) * 100)}
                 className="h-2"
               />
             </div>

@@ -79,7 +79,7 @@
     "onboarding": {
       "badge": "✨ Welcome to Fluxy AI Workspace",
       "title": "Start Automating Your Business Operations",
-      "description": "Fluxy connects 4 AI Employees (Pixel, Maya, Echo, Kai) to help with product image creation, social media scheduling, analytics, and automated WhatsApp customer service.",
+      "description": "Fluxy connects 5 AI Employees (Pixel, Maya, Echo, Kai, Motion) to help with product image creation, social media scheduling, analytics, automated WhatsApp customer service, and video ad prompt creation.",
       "tryPixel": "Try Pixel AI",
       "connectSocial": "Connect Social Media"
     },
@@ -95,7 +95,8 @@
       "pixel": "AI Creative Designer for product photos",
       "maya": "Social Media Manager & Publisher",
       "echo": "Social Media Analytics",
-      "kai": "WhatsApp Sales & Service Chatbot"
+      "kai": "WhatsApp Sales & Service Chatbot",
+      "motion": "Content Production Specialist for video ad briefs & prompts"
     },
     "recentActivity": {
       "title": "Recent Activity",
@@ -111,7 +112,8 @@
         "gambar": "images",
         "post": "posts",
         "view": "views",
-        "pesan": "messages"
+        "pesan": "messages",
+        "prompt": "prompts"
       }
     }
   },
@@ -166,7 +168,10 @@
       "echoUnlimited": "Unlimited",
       "kai": "Kai (WhatsApp SDR)",
       "kaiDescription": "Chatbot & Broadcast Messages",
-      "kaiUnit": "Messages"
+      "kaiUnit": "Messages",
+      "motion": "Motion (Content Production)",
+      "motionDescription": "Video Ad Brief & Prompts",
+      "motionUnit": "Prompts"
     },
     "connections": {
       "title": "Connected Platforms",
