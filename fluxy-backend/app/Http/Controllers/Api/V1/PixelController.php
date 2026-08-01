@@ -308,5 +308,4 @@ class PixelController extends ApiController
     {
         return (string) $request->user()->current_tenant_id;
     }
-
 }

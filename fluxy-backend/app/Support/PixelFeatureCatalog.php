@@ -31,7 +31,7 @@ final class PixelFeatureCatalog
                 'name' => 'Hapus Background',
                 'category' => 'Edit Cepat',
                 'description' => 'Menghapus background foto secara otomatis.',
-                'prompt_template' => "Remove the background from this image completely. Make the background fully transparent or plain white. Keep the subject sharp and intact.",
+                'prompt_template' => 'Remove the background from this image completely. Make the background fully transparent or plain white. Keep the subject sharp and intact.',
             ],
             'retouch' => [
                 'name' => 'AI Retouch',
