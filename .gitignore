@@ -25,3 +25,11 @@ fluxy-frontend-main/node_modules/
 fluxy-frontend-main/dist/
 fluxy-frontend-main/.env.local
 fluxy-frontend-main/.env.*.local
+
+# Fluxy CRM (apps/*, packages/db)
+node_modules/
+.env
+apps/api/dist/
+apps/web/.next/
+apps/web/tsconfig.tsbuildinfo
+packages/db/generated/
