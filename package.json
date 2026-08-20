@@ -1,0 +1,8 @@
+{
+  "name": "fluxy-crm",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
+}

@@ -1,0 +1,62 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-fluxy}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fluxy}
+      POSTGRES_DB: ${POSTGRES_DB:-fluxy_crm}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fluxy}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+
+  waha:
+    image: devlikeapro/waha:latest
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      WHATSAPP_API_KEY: ${WAHA_API_KEY:-dev-only-key}
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-fluxy}:${POSTGRES_PASSWORD:-fluxy}@postgres:5432/${POSTGRES_DB:-fluxy_crm}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      WEB_ORIGIN: http://localhost:3001
+      PORT: 4000
+    ports:
+      - "4000:4000"
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:4000
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "3001:3001"
+
+volumes:
+  postgres_data:
