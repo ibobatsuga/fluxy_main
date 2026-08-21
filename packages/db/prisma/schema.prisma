@@ -13,13 +13,59 @@ enum Role {
   ADMIN
 }
 
+enum WhatsAppProviderType {
+  WAHA
+  META
+}
+
+enum WhatsAppConnectionStatus {
+  DISCONNECTED
+  CONNECTING
+  QR_PENDING
+  CONNECTED
+  FAILED
+}
+
+enum MessageDirection {
+  IN
+  OUT
+}
+
+enum AiProviderType {
+  OPENAI
+  GEMINI
+  CLAUDE
+  GROQ
+  OPENROUTER
+}
+
+enum BroadcastStatus {
+  DRAFT
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum BroadcastRecipientStatus {
+  PENDING
+  SENT
+  FAILED
+  SKIPPED
+}
+
 model Tenant {
   id        String   @id @default(cuid())
   name      String
   createdAt DateTime @default(now())
 
-  users    User[]
-  products Product[]
+  users               User[]
+  products            Product[]
+  whatsAppConnection  WhatsAppConnection?
+  messages            Message[]
+  aiSettings          AiSettings?
+  conversationStates  ConversationState[]
+  broadcasts          Broadcast[]
+  followUpSettings    FollowUpSettings?
 }
 
 model User {
@@ -48,4 +94,111 @@ model Product {
 
   @@unique([tenantId, sku])
   @@index([tenantId])
+}
+
+model WhatsAppConnection {
+  id                   String                    @id @default(cuid())
+  tenantId             String                    @unique
+  provider             WhatsAppProviderType
+  status               WhatsAppConnectionStatus  @default(DISCONNECTED)
+  phoneNumber          String?
+  // Encrypted JSON blob, shape depends on provider:
+  // WAHA -> { sessionName, hmacSecret }
+  // META -> { accessToken, phoneNumberId, appSecret, verifyToken }
+  credentialsEncrypted String
+  createdAt            DateTime                  @default(now())
+  updatedAt            DateTime                  @updatedAt
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  messages Message[]
+}
+
+model Message {
+  id                String           @id @default(cuid())
+  tenantId          String
+  connectionId      String
+  direction         MessageDirection
+  providerMessageId String
+  fromNumber        String
+  toNumber          String
+  content           String
+  status            String?
+  createdAt         DateTime         @default(now())
+
+  tenant     Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  connection WhatsAppConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, providerMessageId])
+  @@index([tenantId])
+}
+
+model AiSettings {
+  id              String         @id @default(cuid())
+  tenantId        String         @unique
+  provider        AiProviderType
+  apiKeyEncrypted String
+  model           String
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
+model ConversationState {
+  id                    String            @id @default(cuid())
+  tenantId              String
+  contactNumber         String
+  displayName           String?
+  aiPausedUntil         DateTime?
+  lastMessageAt         DateTime?
+  lastMessagePreview    String?
+  lastMessageDirection  MessageDirection?
+  updatedAt             DateTime          @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, contactNumber])
+  @@index([tenantId])
+  @@index([tenantId, lastMessageAt])
+}
+
+model Broadcast {
+  id           String          @id @default(cuid())
+  tenantId     String
+  message      String
+  templateName String?
+  templateLang String?
+  status       BroadcastStatus @default(DRAFT)
+  createdAt    DateTime        @default(now())
+  startedAt    DateTime?
+  completedAt  DateTime?
+
+  tenant     Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  recipients BroadcastRecipient[]
+
+  @@index([tenantId])
+}
+
+model BroadcastRecipient {
+  id            String                    @id @default(cuid())
+  broadcastId   String
+  contactNumber String
+  status        BroadcastRecipientStatus  @default(PENDING)
+  sentAt        DateTime?
+  error         String?
+
+  broadcast Broadcast @relation(fields: [broadcastId], references: [id], onDelete: Cascade)
+
+  @@index([broadcastId])
+  @@index([broadcastId, status])
+}
+
+model FollowUpSettings {
+  id         String  @id @default(cuid())
+  tenantId   String  @unique
+  enabled    Boolean @default(false)
+  delayHours Int     @default(24)
+  message    String
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 }

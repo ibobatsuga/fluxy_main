@@ -31,6 +31,18 @@ export default function DashboardPage() {
       <p>
         Masuk sebagai {me.user.email} ({me.user.role})
       </p>
+      <p>
+        <a href="/whatsapp">Koneksi WhatsApp</a>
+      </p>
+      <p>
+        <a href="/conversations">Percakapan</a>
+      </p>
+      <p>
+        <a href="/broadcast">Broadcast</a>
+      </p>
+      <p>
+        <a href="/followup">Follow-up Otomatis</a>
+      </p>
     </main>
   );
 }

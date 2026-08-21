@@ -38,11 +38,20 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_started
+      waha:
+        condition: service_started
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-fluxy}:${POSTGRES_PASSWORD:-fluxy}@postgres:5432/${POSTGRES_DB:-fluxy_crm}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
       WEB_ORIGIN: http://localhost:3001
       PORT: 4000
+      REDIS_URL: redis://redis:6379
+      WAHA_BASE_URL: http://waha:3000
+      WAHA_API_KEY: ${WAHA_API_KEY:-dev-only-key}
+      API_INTERNAL_URL: http://api:4000
+      CREDENTIALS_ENCRYPTION_KEY: ${CREDENTIALS_ENCRYPTION_KEY:?CREDENTIALS_ENCRYPTION_KEY is required}
     ports:
       - "4000:4000"
 
