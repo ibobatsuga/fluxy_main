@@ -42,7 +42,7 @@ const navItems: NavItem[] = [
   { to: "/pixel", label: "Pixel", subtitle: "AI Designer", icon: MessageSquare, avatar: pixelAvatar, avatarBg: "bg-blue-600", matchPattern: "/pixel" },
   { to: "/maya", label: "Maya", subtitle: "Social Media", icon: MessageSquare, avatar: mayaAvatar, avatarBg: "bg-blue-600", matchPattern: "/maya" },
   { to: "/echo", label: "Echo", subtitle: "Analytics", icon: MessageSquare, avatar: echoAvatar, avatarBg: "bg-amber-500", matchPattern: "/echo" },
-  { to: "/kai", label: "Kai", subtitle: "Chatbot", icon: MessageSquare, avatar: kaiAvatar, avatarBg: "bg-teal-500", matchPattern: "/kai" },
+  { to: "/kai", label: "Kai", subtitle: "WhatsApp AI", icon: MessageSquare, avatar: kaiAvatar, avatarBg: "bg-teal-500", matchPattern: "/kai" },
   { to: "/motion", label: "Motion", subtitle: "Video Ads", icon: MessageSquare, avatar: motionAvatar, avatarBg: "bg-orange-500", matchPattern: "/motion" },
   { to: "/luna", label: "Luna", subtitle: "Lead Gen", icon: MessageSquare, avatar: lunaAvatar, avatarBg: "bg-violet-600", matchPattern: "/luna" },
 ];
