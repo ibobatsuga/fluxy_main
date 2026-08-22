@@ -42,17 +42,8 @@ const MayaStoriesPage = lazy(() =>
 const EchoPage = lazy(() =>
   import("@/pages/echo/echo-page").then((m) => ({ default: m.EchoPage }))
 );
-const KaiSetupPage = lazy(() =>
-  import("@/pages/kai/setup-page").then((m) => ({ default: m.KaiSetupPage }))
-);
-const KaiBroadcastPage = lazy(() =>
-  import("@/pages/kai/broadcast-page").then((m) => ({ default: m.KaiBroadcastPage }))
-);
-const KaiChatbotPage = lazy(() =>
-  import("@/pages/kai/chatbot-page").then((m) => ({ default: m.KaiChatbotPage }))
-);
-const KaiLogsPage = lazy(() =>
-  import("@/pages/kai/logs-page").then((m) => ({ default: m.KaiLogsPage }))
+const KaiEmbedPage = lazy(() =>
+  import("@/pages/kai/embed-page").then((m) => ({ default: m.KaiEmbedPage }))
 );
 const AdminTenantsPage = lazy(() =>
   import("@/pages/admin/tenants-page").then((m) => ({ default: m.AdminTenantsPage }))
@@ -188,37 +179,13 @@ export default function App() {
                 }
               />
 
-              {/* Kai */}
-              <Route path="/kai" element={<Navigate to="/kai/setup" replace />} />
+              {/* Kai — now embeds the new CRM WhatsApp AI app (apps/web) built in Fase 0-4 */}
+              <Route path="/kai/*" element={<Navigate to="/kai" replace />} />
               <Route
-                path="/kai/setup"
+                path="/kai"
                 element={
                   <Suspense fallback={<PageLoader />}>
-                    <KaiSetupPage />
-                  </Suspense>
-                }
-              />
-              <Route
-                path="/kai/broadcast"
-                element={
-                  <Suspense fallback={<PageLoader />}>
-                    <KaiBroadcastPage />
-                  </Suspense>
-                }
-              />
-              <Route
-                path="/kai/chatbot"
-                element={
-                  <Suspense fallback={<PageLoader />}>
-                    <KaiChatbotPage />
-                  </Suspense>
-                }
-              />
-              <Route
-                path="/kai/logs"
-                element={
-                  <Suspense fallback={<PageLoader />}>
-                    <KaiLogsPage />
+                    <KaiEmbedPage />
                   </Suspense>
                 }
               />
